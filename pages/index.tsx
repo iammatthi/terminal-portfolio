@@ -1,7 +1,6 @@
 import { KeyboardEvent, useState } from 'react'
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import Image from 'next/image'
 import {
   VscChromeClose,
   VscChromeMaximize,
@@ -10,6 +9,8 @@ import {
 import { TiArrowRightThick } from 'react-icons/ti'
 import { parse as cmdParse, ParseEntry } from 'shell-quote'
 import getopts from 'getopts'
+import { getFiles } from '../lib/files'
+import { FileOrDirectory, FileType } from '../types/file'
 
 type History = {
   command: string
@@ -22,7 +23,6 @@ enum GetoptsType {
   string = 'string',
   boolean = 'boolean',
 }
-
 type Option = {
   name: string
   description: string
@@ -42,78 +42,132 @@ type Command = {
   handler: (args: getopts.ParsedOptions) => JSX.Element | string
 }
 
-const commands: Command[] = [
-  {
-    name: 'help',
-    description: 'print help',
-    operands: [],
-    options: [],
-    handler: (args) => {
-      const help = (
-        <>
-          {commands.map((command) => (
-            <div key={command.name}>
-              <span>
-                {command.name} - {command.description}
-              </span>
-              {/* {command.operands.map((operand) => (
-                <>
-                  <span className="ml-4">
-                    {operand.name} - {operand.description}
-                  </span>
-                </>
-              ))}
-              {command.options.map((option) => (
-                <>
-                  <span className="ml-4">
-                    {option.name} - {option.description}
-                  </span>
-                </>
-              ))}
-              <br /> */}
-            </div>
-          ))}
-        </>
-      )
-      return help
-    },
-  },
-  {
-    name: 'ls',
-    description: 'list directory contents',
-    operands: [],
-    options: [
-      {
-        name: 'l',
-        description: 'use a long listing format',
-        getoptsType: GetoptsType.boolean,
-      },
-    ],
-    handler: (args) => {
-      return 'list all'
-    },
-  },
-  {
-    name: 'echo',
-    description: 'display a line of text',
-    operands: [
-      {
-        name: 'text',
-        description: 'the text to display',
-      },
-    ],
-    options: [],
-    handler: (args) => {
-      return args._[0]
-    },
-  },
-]
+interface Props {
+  files: FileOrDirectory[]
+}
 
-const Home: NextPage = () => {
+export async function getStaticProps() {
+  return {
+    props: {
+      files: getFiles(),
+    },
+  }
+}
+
+const Home: NextPage<Props> = ({ files }) => {
+  const [path, setPath] = useState('_files/')
+
+  const commands: Command[] = [
+    {
+      name: 'help',
+      description: 'print help',
+      operands: [],
+      options: [],
+      handler: (args) => {
+        const help = (
+          <>
+            {commands.map((command) => (
+              <div key={command.name}>
+                <span>
+                  {command.name} - {command.description}
+                </span>
+                {/* {command.operands.map((operand) => (
+                  <>
+                    <span className="ml-4">
+                      {operand.name} - {operand.description}
+                    </span>
+                  </>
+                ))}
+                {command.options.map((option) => (
+                  <>
+                    <span className="ml-4">
+                      {option.name} - {option.description}
+                    </span>
+                  </>
+                ))}
+                <br /> */}
+              </div>
+            ))}
+          </>
+        )
+        return help
+      },
+    },
+    {
+      name: 'echo',
+      description: 'display a line of text',
+      operands: [
+        {
+          name: 'text',
+          description: 'the text to display',
+        },
+      ],
+      options: [],
+      handler: (args) => {
+        return args._[0]
+      },
+    },
+    {
+      name: 'ls',
+      description: 'list directory contents',
+      operands: [],
+      options: [
+        {
+          name: 'l',
+          description: 'use a long listing format',
+          getoptsType: GetoptsType.boolean,
+        },
+      ],
+      handler: (args) => {
+        let currentPathFiles = files
+        if (!args.a) {
+          // remove hidden files
+          currentPathFiles = currentPathFiles.filter(
+            (file) => !file.name.startsWith('.')
+          )
+        }
+        if (args.l) {
+          return (
+            <>
+              {currentPathFiles.map((file) => (
+                <div key={file.name}>
+                  <div className="flex gap-3">
+                    <span>-rwxr--r--</span>
+                    <span>matthias</span>
+                    <span>matthias</span>
+                    {file.type === FileType.directory ? (
+                      <span className="text-sky-600">{file.name}</span>
+                    ) : (
+                      <span>{file.name}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </>
+          )
+        } else {
+          return (
+            <div className="flex flex-wrap gap-4">
+              {currentPathFiles.map((file) => (
+                <>
+                  {file.type === FileType.directory ? (
+                    <span className="text-sky-600">{file.name}</span>
+                  ) : (
+                    <span>{file.name}</span>
+                  )}
+                </>
+              ))}
+            </div>
+          )
+        }
+      },
+    },
+  ]
+
   const [history, setHistory] = useState<History[]>([
     {
       command: 'help',
-      result: commands[0].handler({ _: [] }),
+      result: commands.find((c) => c.name === 'help')!.handler({ _: [] }),
       path: '~',
       timestamp: '2020-01-01T00:00:00.000Z',
     },
@@ -193,19 +247,19 @@ const Home: NextPage = () => {
               >
                 <div className="flex items-center gap-2">
                   <TiArrowRightThick color="green" />
-                  <span className="text-blue-500">
+                  <span className="text-teal-500">
                     {getPathSymbol(command.path)}
                   </span>
                   <span>{command.command}</span>
                 </div>
-                <div className="flex flex-col items-start justify-start">
+                <div className="flex w-full flex-col items-start justify-start">
                   {command.result}
                 </div>
               </div>
             ))}
             <div className="flex items-center gap-2">
               <TiArrowRightThick color="green" />
-              <span className="text-blue-500">~</span>
+              <span className="text-teal-500">~</span>
               <div className="relative grow">
                 <input
                   className="w-full border-0 bg-transparent outline-0"
