@@ -1,4 +1,4 @@
-import { KeyboardEvent, useState } from 'react'
+import { KeyboardEvent, useEffect, useRef, useState } from 'react'
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import {
@@ -55,6 +55,12 @@ export async function getStaticProps() {
 }
 
 const Home: NextPage<Props> = ({ files: allFiles }) => {
+  const commandsEndRef = useRef<null | HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    commandsEndRef.current?.scrollIntoView({ behavior: 'auto' })
+  }
+
   const [path, setPath] = useState(['_files'])
 
   const getPathSymbol = (path: string[]) => {
@@ -237,6 +243,10 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
     },
   ])
 
+  useEffect(() => {
+    scrollToBottom()
+  }, [commandHistory])
+
   const cmd = (input: string) => {
     const [command, ...args] = cmdParse(input)
     if (command == undefined) return ''
@@ -335,6 +345,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
                 {/* <i className="caret"></i> */}
               </div>
             </div>
+            <div ref={commandsEndRef} />
           </div>
         </div>
       </main>
