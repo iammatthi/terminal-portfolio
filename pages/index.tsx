@@ -12,11 +12,18 @@ import getopts from 'getopts'
 import { getFiles } from '../lib/files'
 import { FileOrDirectory, FileType } from '../types/file'
 
+type CommandResult = {
+  output: JSX.Element | string
+  error?: boolean
+  shouldBeInvisible?: boolean
+}
+
 type History = {
   input: string
-  result: JSX.Element | string
+  result: CommandResult
   path: string[]
   timestamp: string
+  isInvisible?: boolean
 }
 
 enum GetoptsType {
@@ -39,7 +46,7 @@ type Command = {
   description: string
   operands: Operand[]
   options: Option[]
-  handler: (args: getopts.ParsedOptions) => JSX.Element | string
+  handler: (args: getopts.ParsedOptions) => CommandResult
 }
 
 interface Props {
@@ -117,7 +124,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
             ))}
           </>
         )
-        return help
+        return { output: help }
       },
     },
     {
@@ -131,7 +138,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
       ],
       options: [],
       handler: (args) => {
-        return args._[0]
+        return { output: args._[0] }
       },
     },
     {
@@ -153,8 +160,10 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
             (file) => !file.name.startsWith('.')
           )
         }
+
+        let output
         if (args.l) {
-          return (
+          output = (
             <>
               {currentPathFiles.map((file) => (
                 <div key={file.name}>
@@ -173,7 +182,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
             </>
           )
         } else {
-          return (
+          output = (
             <div className="flex flex-wrap gap-4">
               {currentPathFiles.map((file) => (
                 <>
@@ -187,6 +196,8 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
             </div>
           )
         }
+
+        return { output: output }
       },
     },
     {
@@ -221,15 +232,31 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
           )
           if (newPathFiles.length === 0) {
             // do not exist
-            return `cd: no such file or directory: ${inputPath}`
+            return {
+              output: `cd: no such file or directory: ${inputPath}`,
+              error: true,
+            }
           } else if (newPathFiles[0].type !== FileType.Directory) {
             // not a directory
-            return `cd: not a directory: ${inputPath}`
+            return { output: `cd: not a directory: ${inputPath}`, error: true }
           }
           setPath(newPath)
           setFiles(newPathFiles[0].files!)
         }
-        return ''
+        return { output: '' }
+      },
+    },
+    {
+      name: 'clear',
+      description: 'clear the terminal screen',
+      operands: [],
+      options: [],
+      handler: (args) => {
+        // make all commandHistory items invisible
+        let tmp = commandHistory
+        tmp.forEach((item) => (item.isInvisible = true))
+        setCommandHistory(tmp)
+        return { output: '', shouldBeInvisible: true }
       },
     },
   ]
@@ -247,9 +274,9 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
     scrollToBottom()
   }, [commandHistory])
 
-  const cmd = (input: string) => {
+  const executeCmd = (input: string): CommandResult => {
     const [command, ...args] = cmdParse(input)
-    if (command == undefined) return ''
+    if (command == undefined) return { output: '', shouldBeInvisible: false }
 
     const commandObj = commands.find((c) => c.name === command)
     if (commandObj) {
@@ -266,14 +293,16 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
 
       return commandObj.handler(paramObj)
     }
-    return 'command not found: ' + command
+    return {
+      output: 'command not found: ' + command,
+    }
   }
 
   const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault()
       const input = event.currentTarget.value
-      const result = cmd(input)
+      const result = executeCmd(input)
       setCommandHistory([
         ...commandHistory,
         {
@@ -281,6 +310,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
           result: result,
           path: path,
           timestamp: new Date().toISOString(),
+          isInvisible: result.shouldBeInvisible,
         },
       ])
       event.currentTarget.value = ''
@@ -317,23 +347,25 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
             </div>
           </div>
           <div className="w-full grow cursor-text overflow-auto bg-zinc-700 px-1 py-2">
-            {commandHistory.map((command) => (
-              <div
-                className="flex flex-col items-start"
-                key={command.timestamp}
-              >
-                <div className="flex items-center gap-2">
-                  <TiArrowRightThick color="green" />
-                  <span className="text-teal-500">
-                    {getPathSymbol(command.path)}
-                  </span>
-                  <span>{command.input}</span>
+            {commandHistory
+              .filter((command) => !command.isInvisible)
+              .map((command) => (
+                <div
+                  className="flex flex-col items-start"
+                  key={command.timestamp}
+                >
+                  <div className="flex items-center gap-2">
+                    <TiArrowRightThick color="green" />
+                    <span className="text-teal-500">
+                      {getPathSymbol(command.path)}
+                    </span>
+                    <span>{command.input}</span>
+                  </div>
+                  <div className="flex w-full flex-col items-start justify-start">
+                    {command.result.output}
+                  </div>
                 </div>
-                <div className="flex w-full flex-col items-start justify-start">
-                  {command.result}
-                </div>
-              </div>
-            ))}
+              ))}
             <div className="flex items-center gap-2">
               <TiArrowRightThick color="green" />
               <span className="text-teal-500">{getPathSymbol(path)}</span>
