@@ -1,7 +1,7 @@
 const enum FileType {
-  file,
-  directory,
-  other,
+  File,
+  Directory,
+  Other,
 }
 
 type FileOrDirectory = {

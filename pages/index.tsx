@@ -13,9 +13,9 @@ import { getFiles } from '../lib/files'
 import { FileOrDirectory, FileType } from '../types/file'
 
 type History = {
-  command: string
+  input: string
   result: JSX.Element | string
-  path: string
+  path: string[]
   timestamp: string
 }
 
@@ -54,8 +54,29 @@ export async function getStaticProps() {
   }
 }
 
-const Home: NextPage<Props> = ({ files }) => {
-  const [path, setPath] = useState('_files/')
+const Home: NextPage<Props> = ({ files: allFiles }) => {
+  const [path, setPath] = useState(['_files'])
+
+  const getPathSymbol = (path: string[]) => {
+    if (path.length === 1) return '~'
+    return path[path.length - 1]
+  }
+
+  const getFilesInPath = (path: string[]) => {
+    if (path.length === 1) return allFiles
+
+    let currFiles
+    for (let i = 1; i < path.length; i++) {
+      const file = allFiles.find((file) => file.name === path[i])
+      if (file && file.type === FileType.Directory) {
+        currFiles = file.files
+      }
+    }
+    if (!currFiles) return []
+    return currFiles
+  }
+
+  const [files, setFiles] = useState(getFilesInPath(path))
 
   const commands: Command[] = [
     {
@@ -135,7 +156,7 @@ const Home: NextPage<Props> = ({ files }) => {
                     <span>-rwxr--r--</span>
                     <span>matthias</span>
                     <span>matthias</span>
-                    {file.type === FileType.directory ? (
+                    {file.type === FileType.Directory ? (
                       <span className="text-sky-600">{file.name}</span>
                     ) : (
                       <span>{file.name}</span>
@@ -150,7 +171,7 @@ const Home: NextPage<Props> = ({ files }) => {
             <div className="flex flex-wrap gap-4">
               {currentPathFiles.map((file) => (
                 <>
-                  {file.type === FileType.directory ? (
+                  {file.type === FileType.Directory ? (
                     <span className="text-sky-600">{file.name}</span>
                   ) : (
                     <span>{file.name}</span>
@@ -162,19 +183,64 @@ const Home: NextPage<Props> = ({ files }) => {
         }
       },
     },
+    {
+      name: 'cd',
+      description: 'change the working directory',
+      operands: [
+        {
+          name: 'directory',
+          description: 'the directory to change to',
+        },
+      ],
+      options: [],
+      handler: (args) => {
+        // change directory to args._[0]
+        const inputPath = args._[0]
+        if (inputPath === undefined) {
+          setPath(['_files'])
+          setFiles(allFiles)
+        } else if (inputPath === '..') {
+          if (path.length > 1) {
+            const newPath = path.slice(0, -1)
+            setPath(newPath)
+            setFiles(getFilesInPath(newPath))
+          }
+        } else if (inputPath === '.') {
+          // do nothing
+        } else {
+          const newPath = [...path, ...inputPath.split('/')]
+          const filesInPath = getFilesInPath(newPath)
+          const newPathFiles = filesInPath.filter(
+            (file) => file.name === newPath[newPath.length - 1]
+          )
+          if (newPathFiles.length === 0) {
+            // do not exist
+            return `cd: no such file or directory: ${inputPath}`
+          } else if (newPathFiles[0].type !== FileType.Directory) {
+            // not a directory
+            return `cd: not a directory: ${inputPath}`
+          }
+          setPath(newPath)
+          setFiles(newPathFiles[0].files!)
+        }
+        return ''
+      },
+    },
   ]
 
-  const [history, setHistory] = useState<History[]>([
+  const [commandHistory, setCommandHistory] = useState<History[]>([
     {
-      command: 'help',
+      input: 'help',
       result: commands.find((c) => c.name === 'help')!.handler({ _: [] }),
-      path: '~',
+      path: path,
       timestamp: '2020-01-01T00:00:00.000Z',
     },
   ])
 
   const cmd = (input: string) => {
     const [command, ...args] = cmdParse(input)
+    if (command == undefined) return ''
+
     const commandObj = commands.find((c) => c.name === command)
     if (commandObj) {
       const rules: getopts.Options = commandObj.options.reduce((prev, curr) => {
@@ -193,18 +259,19 @@ const Home: NextPage<Props> = ({ files }) => {
     return 'command not found: ' + command
   }
 
-  const getPathSymbol = (path: string) => {
-    return path
-  }
-
   const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault()
-      const command = event.currentTarget.value
-      const result = cmd(command)
-      setHistory([
-        ...history,
-        { command, result, path: '~', timestamp: new Date().toISOString() },
+      const input = event.currentTarget.value
+      const result = cmd(input)
+      setCommandHistory([
+        ...commandHistory,
+        {
+          input: input,
+          result: result,
+          path: path,
+          timestamp: new Date().toISOString(),
+        },
       ])
       event.currentTarget.value = ''
     }
@@ -240,7 +307,7 @@ const Home: NextPage<Props> = ({ files }) => {
             </div>
           </div>
           <div className="w-full grow cursor-text overflow-auto bg-zinc-700 px-1 py-2">
-            {history.map((command) => (
+            {commandHistory.map((command) => (
               <div
                 className="flex flex-col items-start"
                 key={command.timestamp}
@@ -250,7 +317,7 @@ const Home: NextPage<Props> = ({ files }) => {
                   <span className="text-teal-500">
                     {getPathSymbol(command.path)}
                   </span>
-                  <span>{command.command}</span>
+                  <span>{command.input}</span>
                 </div>
                 <div className="flex w-full flex-col items-start justify-start">
                   {command.result}
@@ -259,7 +326,7 @@ const Home: NextPage<Props> = ({ files }) => {
             ))}
             <div className="flex items-center gap-2">
               <TiArrowRightThick color="green" />
-              <span className="text-teal-500">~</span>
+              <span className="text-teal-500">{getPathSymbol(path)}</span>
               <div className="relative grow">
                 <input
                   className="w-full border-0 bg-transparent outline-0"
