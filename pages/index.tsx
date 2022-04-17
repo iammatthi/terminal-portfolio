@@ -63,6 +63,7 @@ export async function getStaticProps() {
 
 const Home: NextPage<Props> = ({ files: allFiles }) => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
+  const commandInputRef = useRef<null | HTMLInputElement>(null)
 
   const scrollToBottom = () => {
     commandsEndRef.current?.scrollIntoView({ behavior: 'auto' })
@@ -317,6 +318,10 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
     }
   }
 
+  const handleWindowContentClick = () => {
+    commandInputRef.current?.focus()
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <Head>
@@ -346,7 +351,10 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
               </button>
             </div>
           </div>
-          <div className="w-full grow cursor-text overflow-auto bg-zinc-700 px-1 py-2">
+          <div
+            className="w-full grow cursor-text overflow-auto bg-zinc-700 px-1 py-2"
+            onClick={handleWindowContentClick}
+          >
             {commandHistory
               .filter((command) => !command.isInvisible)
               .map((command) => (
@@ -373,6 +381,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
                 <input
                   className="w-full border-0 bg-transparent outline-0"
                   onKeyPress={handleKeyPress}
+                  ref={commandInputRef}
                 ></input>
                 {/* <i className="caret"></i> */}
               </div>
