@@ -10,12 +10,9 @@ import { TiArrowRightThick } from 'react-icons/ti'
 import { parse as cmdParse, ParseEntry } from 'shell-quote'
 import getopts from 'getopts'
 import { getFiles } from '../utils/files'
-import { FileError, FileOrDirectory, FileType } from '../types/file'
-import { APIError } from '../types/api'
-import useSWR from 'swr'
+import { FileError, FileType } from '../types/file'
 import { getPathSymbol } from '../utils/path'
 import { useFiles } from '../hooks/usePath'
-import { ApiError } from 'next/dist/server/api-utils'
 
 type CommandResult = {
   output: JSX.Element | string
@@ -109,7 +106,7 @@ const Home: NextPage = () => {
       ],
       options: [],
       handler: async (args) => {
-        return { output: args._[0] }
+        return { output: args._.join(' ') }
       },
     },
     {
@@ -122,10 +119,26 @@ const Home: NextPage = () => {
           description: 'use a long listing format',
           getoptsType: GetoptsType.boolean,
         },
+        {
+          name: 'a',
+          description: 'do not ignore entries starting with .',
+          getoptsType: GetoptsType.boolean,
+        },
+        {
+          name: 'A',
+          description: 'do not list implied . and ..',
+          getoptsType: GetoptsType.boolean,
+        },
       ],
       handler: async (args) => {
         let filteredFiles = files
-        if (!args.a) {
+
+        if (args.A) {
+          // remove . and ..
+          filteredFiles = filteredFiles.filter(
+            (file) => !['.', '..'].includes(file.name)
+          )
+        } else if (!args.a) {
           // remove hidden files
           filteredFiles = filteredFiles.filter(
             (file) => !file.name.startsWith('.')
@@ -236,7 +249,35 @@ const Home: NextPage = () => {
         return { output: '', shouldBeInvisible: true }
       },
     },
+    {
+      name: 'alias',
+      description: 'show aliases',
+      operands: [],
+      options: [],
+      handler: async (args) => {
+        const output = (
+          <>
+            {Object.keys(aliases).map((alias) => (
+              <div key={alias}>
+                <span>
+                  {alias}='{aliases[alias]}'
+                </span>
+              </div>
+            ))}
+          </>
+        )
+        return { output: output }
+      },
+    },
   ]
+
+  const aliases: { [key: string]: string } = {
+    '..': 'cd ..',
+    l: 'ls -lah',
+    la: 'ls -lAh',
+    ll: 'ls -lh',
+    lsa: 'ls -lah',
+  }
 
   const [commandHistory, setCommandHistory] = useState<History[]>([])
   // commands
@@ -254,8 +295,16 @@ const Home: NextPage = () => {
   //   })
 
   const executeCmd = async (input: string): Promise<CommandResult> => {
-    const [command, ...args] = cmdParse(input)
-    if (command == undefined) return { output: '', shouldBeInvisible: false }
+    let command: ParseEntry, args: ParseEntry[]
+
+    while (true) {
+      ;[command, ...args] = cmdParse(input) // FIXME: formatter adds semicolon
+      if (command == undefined) return { output: '', shouldBeInvisible: false }
+
+      if (aliases[command.toString()])
+        input = input.replace(command.toString(), aliases[command.toString()])
+      else break
+    }
 
     const commandObj = commands.find((c) => c.name === command)
     if (commandObj) {
