@@ -9,8 +9,13 @@ import {
 import { TiArrowRightThick } from 'react-icons/ti'
 import { parse as cmdParse, ParseEntry } from 'shell-quote'
 import getopts from 'getopts'
-import { getFiles } from '../lib/files'
-import { FileOrDirectory, FileType } from '../types/file'
+import { getFiles } from '../utils/files'
+import { FileError, FileOrDirectory, FileType } from '../types/file'
+import { APIError } from '../types/api'
+import useSWR from 'swr'
+import { getPathSymbol } from '../utils/path'
+import { useFiles } from '../hooks/usePath'
+import { ApiError } from 'next/dist/server/api-utils'
 
 type CommandResult = {
   output: JSX.Element | string
@@ -30,6 +35,7 @@ enum GetoptsType {
   string = 'string',
   boolean = 'boolean',
 }
+
 type Option = {
   name: string
   description: string
@@ -46,51 +52,15 @@ type Command = {
   description: string
   operands: Operand[]
   options: Option[]
-  handler: (args: getopts.ParsedOptions) => CommandResult
+  handler: (args: getopts.ParsedOptions) => Promise<CommandResult>
 }
 
-interface Props {
-  files: FileOrDirectory[]
-}
-
-export async function getStaticProps() {
-  return {
-    props: {
-      files: getFiles(),
-    },
-  }
-}
-
-const Home: NextPage<Props> = ({ files: allFiles }) => {
+const Home: NextPage = () => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
   const commandInputRef = useRef<null | HTMLInputElement>(null)
 
-  const scrollToBottom = () => {
-    commandsEndRef.current?.scrollIntoView({ behavior: 'auto' })
-  }
-
-  const [path, setPath] = useState(['_files'])
-
-  const getPathSymbol = (path: string[]) => {
-    if (path.length === 1) return '~'
-    return path[path.length - 1]
-  }
-
-  const getFilesInPath = (path: string[]) => {
-    if (path.length === 1) return allFiles
-
-    let currFiles
-    for (let i = 1; i < path.length; i++) {
-      const file = allFiles.find((file) => file.name === path[i])
-      if (file && file.type === FileType.Directory) {
-        currFiles = file.files
-      }
-    }
-    if (!currFiles) return []
-    return currFiles
-  }
-
-  const [files, setFiles] = useState(getFilesInPath(path))
+  const [path, setPath] = useState<string[]>([])
+  const files = useFiles(path)
 
   const commands: Command[] = [
     {
@@ -98,7 +68,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
       description: 'print help',
       operands: [],
       options: [],
-      handler: (args) => {
+      handler: async (args) => {
         const help = (
           <>
             {commands.map((command) => (
@@ -138,7 +108,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
         },
       ],
       options: [],
-      handler: (args) => {
+      handler: async (args) => {
         return { output: args._[0] }
       },
     },
@@ -153,11 +123,11 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
           getoptsType: GetoptsType.boolean,
         },
       ],
-      handler: (args) => {
-        let currentPathFiles = files
+      handler: async (args) => {
+        let filteredFiles = files
         if (!args.a) {
           // remove hidden files
-          currentPathFiles = currentPathFiles.filter(
+          filteredFiles = filteredFiles.filter(
             (file) => !file.name.startsWith('.')
           )
         }
@@ -166,7 +136,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
         if (args.l) {
           output = (
             <>
-              {currentPathFiles.map((file) => (
+              {filteredFiles.map((file) => (
                 <div key={file.name}>
                   <div className="flex gap-3">
                     <span>-rwxr--r--</span>
@@ -185,14 +155,14 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
         } else {
           output = (
             <div className="flex flex-wrap gap-4">
-              {currentPathFiles.map((file) => (
-                <>
+              {filteredFiles.map((file) => (
+                <div key={file.name}>
                   {file.type === FileType.Directory ? (
                     <span className="text-sky-600">{file.name}</span>
                   ) : (
                     <span>{file.name}</span>
                   )}
-                </>
+                </div>
               ))}
             </div>
           )
@@ -211,39 +181,45 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
         },
       ],
       options: [],
-      handler: (args) => {
+      handler: async (args) => {
         // change directory to args._[0]
         const inputPath = args._[0]
         if (inputPath === undefined) {
-          setPath(['_files'])
-          setFiles(allFiles)
+          setPath([])
         } else if (inputPath === '..') {
-          if (path.length > 1) {
+          if (path.length > 0) {
             const newPath = path.slice(0, -1)
             setPath(newPath)
-            setFiles(getFilesInPath(newPath))
           }
         } else if (inputPath === '.') {
           // do nothing
         } else {
           const newPath = [...path, ...inputPath.split('/')]
-          const filesInPath = getFilesInPath(newPath)
-          const newPathFiles = filesInPath.filter(
-            (file) => file.name === newPath[newPath.length - 1]
-          )
-          if (newPathFiles.length === 0) {
-            // do not exist
-            return {
-              output: `cd: no such file or directory: ${inputPath}`,
-              error: true,
+          const filesInPath = await getFiles(newPath)
+          if (filesInPath.error) {
+            if (filesInPath.data === FileError.NoSuchFileOrDirectory) {
+              // do not exist
+              return {
+                output: `cd: no such file or directory: ${inputPath}`,
+                error: true,
+              }
+            } else if (filesInPath.data === FileError.NotADirectory) {
+              // not a directory
+              return {
+                output: `cd: not a directory: ${inputPath}`,
+                error: true,
+              }
+            } else {
+              return {
+                output: `cd: error`,
+                error: true,
+              }
             }
-          } else if (newPathFiles[0].type !== FileType.Directory) {
-            // not a directory
-            return { output: `cd: not a directory: ${inputPath}`, error: true }
           }
+
           setPath(newPath)
-          setFiles(newPathFiles[0].files!)
         }
+
         return { output: '' }
       },
     },
@@ -252,7 +228,7 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
       description: 'clear the terminal screen',
       operands: [],
       options: [],
-      handler: (args) => {
+      handler: async (args) => {
         // make all commandHistory items invisible
         let tmp = commandHistory
         tmp.forEach((item) => (item.isInvisible = true))
@@ -262,20 +238,22 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
     },
   ]
 
-  const [commandHistory, setCommandHistory] = useState<History[]>([
-    {
-      input: 'help',
-      result: commands.find((c) => c.name === 'help')!.handler({ _: [] }),
-      path: path,
-      timestamp: '2020-01-01T00:00:00.000Z',
-    },
-  ])
+  const [commandHistory, setCommandHistory] = useState<History[]>([])
+  // commands
+  //   .find((c) => c.name === 'help')!
+  //   .handler({ _: [] })
+  //   .then((result) => {
+  //     setCommandHistory([
+  //       {
+  //         input: 'help',
+  //         result: result,
+  //         path: path,
+  //         timestamp: '2020-01-01T00:00:00.000Z',
+  //       },
+  //     ])
+  //   })
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [commandHistory])
-
-  const executeCmd = (input: string): CommandResult => {
+  const executeCmd = async (input: string): Promise<CommandResult> => {
     const [command, ...args] = cmdParse(input)
     if (command == undefined) return { output: '', shouldBeInvisible: false }
 
@@ -303,17 +281,18 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
     if (event.key === 'Enter') {
       event.preventDefault()
       const input = event.currentTarget.value
-      const result = executeCmd(input)
-      setCommandHistory([
-        ...commandHistory,
-        {
-          input: input,
-          result: result,
-          path: path,
-          timestamp: new Date().toISOString(),
-          isInvisible: result.shouldBeInvisible,
-        },
-      ])
+      executeCmd(input).then((result) => {
+        setCommandHistory([
+          ...commandHistory,
+          {
+            input: input,
+            result: result,
+            path: path,
+            timestamp: new Date().toISOString(),
+            isInvisible: result.shouldBeInvisible,
+          },
+        ])
+      })
       event.currentTarget.value = ''
     }
   }
@@ -321,6 +300,14 @@ const Home: NextPage<Props> = ({ files: allFiles }) => {
   const handleWindowContentClick = () => {
     commandInputRef.current?.focus()
   }
+
+  const scrollToBottom = () => {
+    commandsEndRef.current?.scrollIntoView({ behavior: 'auto' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [commandHistory])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
