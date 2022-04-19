@@ -9,10 +9,10 @@ import {
 import { TiArrowRightThick } from 'react-icons/ti'
 import { parse as cmdParse, ParseEntry } from 'shell-quote'
 import getopts from 'getopts'
-import { getFiles } from '../utils/files'
+import { getFiles, getFileContents } from '../utils/files'
 import { FileError, FileType } from '../types/file'
 import { getPathSymbol } from '../utils/path'
-import { useFiles } from '../hooks/usePath'
+import { useFiles } from '../hooks/useFiles'
 import {
   Command,
   CommandHistory,
@@ -88,7 +88,7 @@ const Home: NextPage = () => {
               }
             } else {
               return {
-                output: `cd: error`,
+                output: `cd: Error`,
                 error: true,
               }
             }
@@ -141,21 +141,6 @@ const Home: NextPage = () => {
                 <span>
                   {command.name} - {command.description}
                 </span>
-                {/* {command.operands.map((operand) => (
-                  <>
-                    <span className="ml-4">
-                      {operand.name} - {operand.description}
-                    </span>
-                  </>
-                ))}
-                {command.options.map((option) => (
-                  <>
-                    <span className="ml-4">
-                      {option.name} - {option.description}
-                    </span>
-                  </>
-                ))}
-                <br /> */}
               </div>
             ))}
           </>
@@ -238,6 +223,54 @@ const Home: NextPage = () => {
         return { output: output }
       },
     },
+    {
+      name: 'cat',
+      description: 'concatenate files and print on the standard output',
+      operands: [
+        {
+          name: 'file(s)',
+          description: 'Concatenate FILE(s) to standard output.',
+        },
+      ],
+      options: [],
+      handler: async (args) => {
+        const filesToConcat = args._
+        if (filesToConcat.length === 0) {
+          return {
+            output: 'cat: Missing operand',
+            error: true,
+          }
+        }
+
+        let output = ''
+        for (const file of filesToConcat) {
+          const fileContents = await getFileContents([...path, file])
+          if (fileContents.error) {
+            if (fileContents.data === FileError.NoSuchFileOrDirectory) {
+              // do not exist
+              return {
+                output: `cat: ${file}: No such file or directory`,
+                error: true,
+              }
+            } else if (fileContents.data === FileError.NotAFile) {
+              // not a file
+              return {
+                output: `cat: ${file}: Is a directory`,
+                error: true,
+              }
+            } else {
+              return {
+                output: `cat: Error`,
+                error: true,
+              }
+            }
+          }
+          output += fileContents.data
+        }
+
+        return { output: <span className="whitespace-pre-wrap">{output}</span> }
+      },
+    },
   ]
   // sort commands by name
   commands.sort((a, b) => a.name.localeCompare(b.name))
@@ -251,19 +284,22 @@ const Home: NextPage = () => {
   }
 
   const [commandHistory, setCommandHistory] = useState<CommandHistory[]>([])
-  // commands
-  //   .find((c) => c.name === 'help')!
-  //   .handler({ _: [] })
-  //   .then((result) => {
-  //     setCommandHistory([
-  //       {
-  //         input: 'help',
-  //         result: result,
-  //         path: path,
-  //         timestamp: '2020-01-01T00:00:00.000Z',
-  //       },
-  //     ])
-  //   })
+
+  useEffect(() => {
+    commands
+      .find((c) => c.name === 'help')!
+      .handler({ _: [] })
+      .then((result) => {
+        setCommandHistory([
+          {
+            input: 'help',
+            result: result,
+            path: path,
+            timestamp: '2020-01-01T00:00:00.000Z',
+          },
+        ])
+      })
+  }, [])
 
   const executeCmd = async (input: string): Promise<CommandResult> => {
     let command: ParseEntry, args: ParseEntry[]
@@ -382,7 +418,7 @@ const Home: NextPage = () => {
                     </span>
                     <span>{command.input}</span>
                   </div>
-                  <div className="flex w-full flex-col items-start justify-start">
+                  <div className="flex w-full flex-col items-start justify-start text-left">
                     {command.result.output}
                   </div>
                 </div>

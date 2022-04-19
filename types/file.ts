@@ -7,6 +7,7 @@ const enum FileType {
 const enum FileError {
   NoSuchFileOrDirectory = 'no such file or directory',
   NotADirectory = 'not a directory',
+  NotAFile = 'not a file',
 }
 
 type FileOrDirectory = {
