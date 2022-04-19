@@ -339,6 +339,14 @@ const Home: NextPage = () => {
       event.preventDefault()
       const input = event.currentTarget.value
       executeCmd(input).then((result) => {
+        console.log(...commandHistory, {
+          input: input,
+          result: result,
+          path: path,
+          timestamp: new Date().toISOString(),
+          isInvisible: result.shouldBeInvisible,
+        })
+
         setCommandHistory([
           ...commandHistory,
           {
@@ -401,14 +409,14 @@ const Home: NextPage = () => {
           >
             {commandHistory
               .filter((command) => !command.isInvisible)
-              .map((command, index) => (
+              .map((command, index, filteredCommandHistory) => (
                 <div
                   className="flex flex-col items-start"
                   key={command.timestamp}
                 >
                   <div className="flex items-center gap-2">
                     {index !== 0 &&
-                    commandHistory.at(index - 1)?.result.error ? (
+                    filteredCommandHistory.at(index - 1)?.result.error ? (
                       <TiArrowRightThick color="red" />
                     ) : (
                       <TiArrowRightThick color="green" />
