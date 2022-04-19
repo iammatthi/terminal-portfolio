@@ -13,44 +13,12 @@ import { getFiles } from '../utils/files'
 import { FileError, FileType } from '../types/file'
 import { getPathSymbol } from '../utils/path'
 import { useFiles } from '../hooks/usePath'
-
-type CommandResult = {
-  output: JSX.Element | string
-  error?: boolean
-  shouldBeInvisible?: boolean
-}
-
-type History = {
-  input: string
-  result: CommandResult
-  path: string[]
-  timestamp: string
-  isInvisible?: boolean
-}
-
-enum GetoptsType {
-  string = 'string',
-  boolean = 'boolean',
-}
-
-type Option = {
-  name: string
-  description: string
-  getoptsType: GetoptsType
-}
-
-type Operand = {
-  name: string
-  description: string
-}
-
-type Command = {
-  name: string
-  description: string
-  operands: Operand[]
-  options: Option[]
-  handler: (args: getopts.ParsedOptions) => Promise<CommandResult>
-}
+import {
+  Command,
+  CommandHistory,
+  CommandResult,
+  GetoptsType,
+} from '../types/command'
 
 const Home: NextPage = () => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
@@ -61,11 +29,111 @@ const Home: NextPage = () => {
 
   const commands: Command[] = [
     {
+      name: 'alias',
+      description: 'show aliases',
+      operands: [],
+      options: [],
+      handler: async (args) => {
+        const output = (
+          <>
+            {Object.keys(aliases).map((alias) => (
+              <div key={alias}>
+                <span>
+                  {alias}='{aliases[alias]}'
+                </span>
+              </div>
+            ))}
+          </>
+        )
+        return { output: output }
+      },
+    },
+    {
+      name: 'cd',
+      description: 'change the working directory',
+      operands: [
+        {
+          name: 'directory',
+          description: 'the directory to change to',
+        },
+      ],
+      options: [],
+      handler: async (args) => {
+        // change directory to args._[0]
+        const inputPath = args._[0]
+        if (inputPath === undefined) {
+          setPath([])
+        } else if (inputPath === '..') {
+          if (path.length > 0) {
+            const newPath = path.slice(0, -1)
+            setPath(newPath)
+          }
+        } else if (inputPath === '.') {
+          // do nothing
+        } else {
+          const newPath = [...path, ...inputPath.split('/')]
+          const filesInPath = await getFiles(newPath)
+          if (filesInPath.error) {
+            if (filesInPath.data === FileError.NoSuchFileOrDirectory) {
+              // do not exist
+              return {
+                output: `cd: no such file or directory: ${inputPath}`,
+                error: true,
+              }
+            } else if (filesInPath.data === FileError.NotADirectory) {
+              // not a directory
+              return {
+                output: `cd: not a directory: ${inputPath}`,
+                error: true,
+              }
+            } else {
+              return {
+                output: `cd: error`,
+                error: true,
+              }
+            }
+          }
+
+          setPath(newPath)
+        }
+
+        return { output: '' }
+      },
+    },
+    {
+      name: 'clear',
+      description: 'clear the terminal screen',
+      operands: [],
+      options: [],
+      handler: async (args) => {
+        // make all commandHistory items invisible
+        let tmp = commandHistory
+        tmp.forEach((item) => (item.isInvisible = true))
+        setCommandHistory(tmp)
+        return { output: '', shouldBeInvisible: true }
+      },
+    },
+    {
+      name: 'echo',
+      description: 'display a line of text',
+      operands: [
+        {
+          name: 'text',
+          description: 'the text to display',
+        },
+      ],
+      options: [],
+      handler: async (args) => {
+        return { output: args._.join(' ') }
+      },
+    },
+    {
       name: 'help',
       description: 'print help',
       operands: [],
       options: [],
       handler: async (args) => {
+        // sort commands by name
         const help = (
           <>
             {commands.map((command) => (
@@ -93,20 +161,6 @@ const Home: NextPage = () => {
           </>
         )
         return { output: help }
-      },
-    },
-    {
-      name: 'echo',
-      description: 'display a line of text',
-      operands: [
-        {
-          name: 'text',
-          description: 'the text to display',
-        },
-      ],
-      options: [],
-      handler: async (args) => {
-        return { output: args._.join(' ') }
       },
     },
     {
@@ -184,92 +238,9 @@ const Home: NextPage = () => {
         return { output: output }
       },
     },
-    {
-      name: 'cd',
-      description: 'change the working directory',
-      operands: [
-        {
-          name: 'directory',
-          description: 'the directory to change to',
-        },
-      ],
-      options: [],
-      handler: async (args) => {
-        // change directory to args._[0]
-        const inputPath = args._[0]
-        if (inputPath === undefined) {
-          setPath([])
-        } else if (inputPath === '..') {
-          if (path.length > 0) {
-            const newPath = path.slice(0, -1)
-            setPath(newPath)
-          }
-        } else if (inputPath === '.') {
-          // do nothing
-        } else {
-          const newPath = [...path, ...inputPath.split('/')]
-          const filesInPath = await getFiles(newPath)
-          if (filesInPath.error) {
-            if (filesInPath.data === FileError.NoSuchFileOrDirectory) {
-              // do not exist
-              return {
-                output: `cd: no such file or directory: ${inputPath}`,
-                error: true,
-              }
-            } else if (filesInPath.data === FileError.NotADirectory) {
-              // not a directory
-              return {
-                output: `cd: not a directory: ${inputPath}`,
-                error: true,
-              }
-            } else {
-              return {
-                output: `cd: error`,
-                error: true,
-              }
-            }
-          }
-
-          setPath(newPath)
-        }
-
-        return { output: '' }
-      },
-    },
-    {
-      name: 'clear',
-      description: 'clear the terminal screen',
-      operands: [],
-      options: [],
-      handler: async (args) => {
-        // make all commandHistory items invisible
-        let tmp = commandHistory
-        tmp.forEach((item) => (item.isInvisible = true))
-        setCommandHistory(tmp)
-        return { output: '', shouldBeInvisible: true }
-      },
-    },
-    {
-      name: 'alias',
-      description: 'show aliases',
-      operands: [],
-      options: [],
-      handler: async (args) => {
-        const output = (
-          <>
-            {Object.keys(aliases).map((alias) => (
-              <div key={alias}>
-                <span>
-                  {alias}='{aliases[alias]}'
-                </span>
-              </div>
-            ))}
-          </>
-        )
-        return { output: output }
-      },
-    },
   ]
+  // sort commands by name
+  commands.sort((a, b) => a.name.localeCompare(b.name))
 
   const aliases: { [key: string]: string } = {
     '..': 'cd ..',
@@ -279,7 +250,7 @@ const Home: NextPage = () => {
     lsa: 'ls -lah',
   }
 
-  const [commandHistory, setCommandHistory] = useState<History[]>([])
+  const [commandHistory, setCommandHistory] = useState<CommandHistory[]>([])
   // commands
   //   .find((c) => c.name === 'help')!
   //   .handler({ _: [] })
@@ -323,6 +294,7 @@ const Home: NextPage = () => {
     }
     return {
       output: 'command not found: ' + command,
+      error: true,
     }
   }
 
@@ -393,13 +365,18 @@ const Home: NextPage = () => {
           >
             {commandHistory
               .filter((command) => !command.isInvisible)
-              .map((command) => (
+              .map((command, index) => (
                 <div
                   className="flex flex-col items-start"
                   key={command.timestamp}
                 >
                   <div className="flex items-center gap-2">
-                    <TiArrowRightThick color="green" />
+                    {index !== 0 &&
+                    commandHistory.at(index - 1)?.result.error ? (
+                      <TiArrowRightThick color="red" />
+                    ) : (
+                      <TiArrowRightThick color="green" />
+                    )}
                     <span className="text-teal-500">
                       {getPathSymbol(command.path)}
                     </span>
@@ -411,7 +388,11 @@ const Home: NextPage = () => {
                 </div>
               ))}
             <div className="flex items-center gap-2">
-              <TiArrowRightThick color="green" />
+              {commandHistory.at(-1)?.result.error ? (
+                <TiArrowRightThick color="red" />
+              ) : (
+                <TiArrowRightThick color="green" />
+              )}
               <span className="text-teal-500">{getPathSymbol(path)}</span>
               <div className="relative grow">
                 <input
