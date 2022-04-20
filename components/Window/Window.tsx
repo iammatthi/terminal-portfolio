@@ -53,14 +53,19 @@ const Window: FC<Props> = ({
   const nodeRef = useRef(null)
 
   return (
-    <Draggable nodeRef={nodeRef} disabled={!draggable} bounds="parent">
+    <Draggable
+      nodeRef={nodeRef}
+      disabled={!draggable}
+      bounds="parent"
+      handle=".header"
+    >
       <div
         className={cn(s.root, className)}
         style={{ width: width, height: height }}
         ref={nodeRef}
       >
         <div
-          className="relative flex w-full cursor-default items-center justify-center rounded-t-lg bg-zinc-800 p-5"
+          className="header relative flex w-full cursor-default items-center justify-center rounded-t-lg bg-zinc-800 p-5"
           style={{ height: '50px' }}
         >
           <span>{title}</span>
