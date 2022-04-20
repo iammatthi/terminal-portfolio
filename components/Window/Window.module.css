@@ -1,0 +1,11 @@
+.root {
+  @apply flex flex-col text-white;
+}
+
+.headerButton {
+  @apply flex h-8 w-8 items-center justify-center rounded-full border border-zinc-800 transition-colors duration-300;
+}
+
+.headerButton:hover {
+  @apply border-zinc-900 bg-zinc-700;
+}

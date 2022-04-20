@@ -19,6 +19,7 @@ import {
   CommandResult,
   GetoptsType,
 } from '../types/command'
+import Window from '../components/Window'
 
 const Home: NextPage = () => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
@@ -339,14 +340,6 @@ const Home: NextPage = () => {
       event.preventDefault()
       const input = event.currentTarget.value
       executeCmd(input).then((result) => {
-        console.log(...commandHistory, {
-          input: input,
-          result: result,
-          path: path,
-          timestamp: new Date().toISOString(),
-          isInvisible: result.shouldBeInvisible,
-        })
-
         setCommandHistory([
           ...commandHistory,
           {
@@ -362,7 +355,7 @@ const Home: NextPage = () => {
     }
   }
 
-  const handleWindowContentClick = () => {
+  const handleWindowKeyPress = () => {
     commandInputRef.current?.focus()
   }
 
@@ -376,36 +369,20 @@ const Home: NextPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
-      <Head>
-        <title>Matthias Berchtold</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className="flex w-full flex-1 flex-col items-center justify-center bg-black px-20 text-center">
-        <div
-          className="text-s flex flex-col text-white"
-          style={{ width: '735px', height: '480px' }}
+      <div className="flex w-full flex-1 flex-col items-center justify-center bg-black text-center">
+        <Window
+          title={
+            'matthias@portfolio:~' +
+            (path.length > 0 ? '/' + path.join('/') : '')
+          }
+          width="735px"
+          height="480px"
+          draggable
         >
           <div
-            className="relative flex w-full cursor-default items-center justify-center rounded-t-lg bg-zinc-800 p-5"
-            style={{ height: '50px' }}
-          >
-            <span>matthias@portfolio:~</span>
-            <div className="absolute right-0 flex flex-row gap-8 p-5">
-              <button>
-                <VscChromeMinimize />
-              </button>
-              <button>
-                <VscChromeMaximize />
-              </button>
-              <button>
-                <VscChromeClose />
-              </button>
-            </div>
-          </div>
-          <div
-            className="w-full grow cursor-text overflow-auto bg-zinc-700 px-1 py-2"
-            onClick={handleWindowContentClick}
+            className="h-full w-full cursor-text overflow-auto bg-zinc-700 px-1 py-2"
+            onKeyPress={handleWindowKeyPress}
+            tabIndex={0}
           >
             {commandHistory
               .filter((command) => !command.isInvisible)
@@ -449,8 +426,8 @@ const Home: NextPage = () => {
             </div>
             <div ref={commandsEndRef} />
           </div>
-        </div>
-      </main>
+        </Window>
+      </div>
     </div>
   )
 }
