@@ -298,10 +298,9 @@ const Terminal: FC = () => {
 
         switch (fileName.match(/\.(?<extension>\w+)$/)?.groups?.extension) {
           case FileExtension.Markdown:
-            const pathStr = path
-              .concat([args._[0]])
+            const pathStr = [...path, fileName]
               .join('/')
-              .replace(/\.md$/, '')
+              .replace(new RegExp(`.${FileExtension.Markdown}$`), '')
 
             openWindow(<Browser url={pathStr} proc={getProc()} />)
 

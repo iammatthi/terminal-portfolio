@@ -5,6 +5,7 @@ import { getFileContents } from '../lib/files'
 import { ParsedUrlQuery } from 'querystring'
 import md from 'markdown-it'
 import matter from 'gray-matter'
+import { FileExtension } from '../types/file'
 
 interface Props {
   content: string
@@ -30,7 +31,7 @@ export const getStaticProps: GetStaticProps<Props, Params> = async (
   context
 ) => {
   const { path } = context.params!
-  path[path.length - 1] = path[path.length - 1] + '.md'
+  path[path.length - 1] = path[path.length - 1] + '.' + FileExtension.Markdown
   const rawContent = await getFileContents(path)
 
   if (rawContent.error) {
@@ -65,10 +66,12 @@ export const getStaticPaths: GetStaticPaths<Params> = async () => {
 
   return {
     paths: paths
-      .filter((path) => path.match(/\.md$/))
+      .filter((path) => path.match(new RegExp(`.${FileExtension.Markdown}$`)))
       .map((path) => ({
         params: {
-          path: path.replace(/\.md$/, '').split('/'),
+          path: path
+            .replace(new RegExp(`.${FileExtension.Markdown}$`), '')
+            .split('/'),
         },
       })),
     fallback: false,
