@@ -3,14 +3,10 @@ import path from 'path'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { FileError, FileOrDirectory, FileType } from '../../../types/file'
 import { APIResponse } from '../../../types/api'
+import { pathToString } from '../../../lib/path'
 
 export default (req: NextApiRequest, res: NextApiResponse<APIResponse>) => {
-  const { path: tmp } = req.query
-  let filePath = ['_files']
-  if (tmp !== undefined) {
-    filePath = ['_files', ...(tmp as string[])]
-  }
-  const filePathStr = filePath.join('/')
+  const filePathStr = pathToString(req.query.path as string[])
   const dir = path.resolve('./public', filePathStr)
 
   if (!fs.existsSync(dir)) {

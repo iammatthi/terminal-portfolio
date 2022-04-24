@@ -9,12 +9,13 @@ import {
 import s from './Window.module.css'
 
 interface Props {
-  title: string
+  title?: string
   children: React.ReactNode
   className?: string
   width?: string
   height?: string
   draggable?: boolean
+  style?: React.CSSProperties
   onClose?: () => void
   onMaximize?: () => void
   onMinimize?: () => void
@@ -30,6 +31,7 @@ const Window: FC<Props> = ({
   onClose,
   onMaximize,
   onMinimize,
+  style,
   ...rest
 }) => {
   const handleClose = () => {
@@ -61,7 +63,7 @@ const Window: FC<Props> = ({
     >
       <div
         className={cn(s.root, className)}
-        style={{ width: width, height: height }}
+        style={{ width: width, height: height, ...style }}
         ref={nodeRef}
       >
         <div

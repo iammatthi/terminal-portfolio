@@ -5,7 +5,7 @@ interface Props {
 }
 
 const Layout: FC<Props> = ({ children }) => {
-  return <main className="fit">{children}</main>
+  return <main className="h-screen w-screen">{children}</main>
 }
 
 export default Layout

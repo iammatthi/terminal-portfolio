@@ -4,6 +4,12 @@ const enum FileType {
   Other,
 }
 
+const enum FileExtension {
+  Markdown = 'md',
+  Text = 'txt',
+  Other = '',
+}
+
 const enum FileError {
   NoSuchFileOrDirectory = 'no such file or directory',
   NotADirectory = 'not a directory',
@@ -17,4 +23,4 @@ type FileOrDirectory = {
 }
 
 export type { FileOrDirectory }
-export { FileType, FileError }
+export { FileType, FileError, FileExtension }

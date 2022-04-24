@@ -1,5 +1,5 @@
 .root {
-  @apply flex flex-col text-white;
+  @apply absolute flex flex-col text-white;
 }
 
 .headerButton {
