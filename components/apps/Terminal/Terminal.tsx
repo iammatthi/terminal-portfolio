@@ -1,4 +1,5 @@
 import {
+  ChangeEvent,
   FC,
   KeyboardEvent,
   useContext,
@@ -15,7 +16,7 @@ import { getPathSymbol } from '../../../lib/path'
 import { useFiles } from '../../../hooks/useFiles'
 import {
   Command,
-  CommandHistory,
+  ExecutedCommand,
   CommandResult,
   GetoptsType,
 } from '../../../types/command'
@@ -27,10 +28,40 @@ import TextViewer from '../TextViewer'
 const Terminal: FC = () => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
   const commandInputRef = useRef<null | HTMLInputElement>(null)
-  const { windows, openWindow, getProc } = useContext(WindowsContext)
 
+  const { windows, openWindow, getProc } = useContext(WindowsContext)
   const [path, setPath] = useState<string[]>([])
   const files = useFiles(path)
+  const [commandHistory, setCommandHistory] = useState<string[]>([])
+  const [filteredCommandHistory, setFilteredCommandHistory] = useState<
+    string[]
+  >([])
+  const [filteredCommandHistoryIndex, setFilteredCommandHistoryIndex] =
+    useState<number>(0)
+  const [typedInput, setTypedInput] = useState<string>('')
+  const [executedCommands, setExecutedCommands] = useState<ExecutedCommand[]>(
+    []
+  )
+
+  const incrementFilteredCommandHistoryIndex = () => {
+    if (filteredCommandHistoryIndex < filteredCommandHistory.length) {
+      setFilteredCommandHistoryIndex(filteredCommandHistoryIndex + 1)
+    }
+  }
+
+  const decrementFilteredCommandHistoryIndex = () => {
+    if (filteredCommandHistoryIndex > 0) {
+      setFilteredCommandHistoryIndex(filteredCommandHistoryIndex - 1)
+    }
+  }
+
+  const addCommandToExecutedList = (command: ExecutedCommand) => {
+    setExecutedCommands([...executedCommands, command])
+  }
+
+  const addCommandToHistory = (command: string) => {
+    setCommandHistory([...commandHistory, command])
+  }
 
   const commands: Command[] = [
     {
@@ -111,10 +142,10 @@ const Terminal: FC = () => {
       operands: [],
       options: [],
       handler: async (args) => {
-        // make all commandHistory items invisible
-        let tmp = commandHistory
+        // make all executedCommands items invisible
+        let tmp = executedCommands
         tmp.forEach((item) => (item.isInvisible = true))
-        setCommandHistory(tmp)
+        setExecutedCommands(tmp)
         return { output: '', shouldBeInvisible: true }
       },
     },
@@ -351,30 +382,12 @@ const Terminal: FC = () => {
     open: 'xdg-open',
   }
 
-  const [commandHistory, setCommandHistory] = useState<CommandHistory[]>([])
-
-  useEffect(() => {
-    commands
-      .find((c) => c.name === 'help')!
-      .handler({ _: [] })
-      .then((result) => {
-        setCommandHistory([
-          {
-            input: 'help',
-            result: result,
-            path: path,
-            timestamp: '2020-01-01T00:00:00.000Z',
-          },
-        ])
-      })
-  }, [])
-
-  const executeCmd = async (input: string): Promise<CommandResult> => {
+  const getCommandResult = async (input: string): Promise<CommandResult> => {
     let command: ParseEntry, args: ParseEntry[]
 
     while (true) {
       ;[command, ...args] = cmdParse(input) // FIXME: formatter adds semicolon
-      if (command == undefined) return { output: '', shouldBeInvisible: false }
+      if (command == undefined) return { output: '', notSavedInHistory: true }
 
       if (aliases[command.toString()])
         input = input.replace(command.toString(), aliases[command.toString()])
@@ -402,24 +415,37 @@ const Terminal: FC = () => {
     }
   }
 
-  const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
+  const exec = (input: string): void => {
+    getCommandResult(input).then((result) => {
+      addCommandToExecutedList({
+        input: input,
+        result: result,
+        path: path,
+        timestamp: new Date().toISOString(),
+        isInvisible: result.shouldBeInvisible,
+      })
+      if (!result.notSavedInHistory) {
+        addCommandToHistory(input)
+      }
+    })
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault()
       const input = event.currentTarget.value
-      executeCmd(input).then((result) => {
-        setCommandHistory([
-          ...commandHistory,
-          {
-            input: input,
-            result: result,
-            path: path,
-            timestamp: new Date().toISOString(),
-            isInvisible: result.shouldBeInvisible,
-          },
-        ])
-      })
+      exec(input)
+      setTypedInput('')
       event.currentTarget.value = ''
+    } else if (event.key === 'ArrowUp') {
+      decrementFilteredCommandHistoryIndex()
+    } else if (event.key === 'ArrowDown') {
+      incrementFilteredCommandHistoryIndex()
     }
+  }
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setTypedInput(event.target.value)
   }
 
   const handleWindowKeyPress = () => {
@@ -431,8 +457,44 @@ const Terminal: FC = () => {
   }
 
   useEffect(() => {
+    exec('help')
+  }, [])
+
+  useEffect(() => {
+    if (typedInput.length > 0) {
+      setFilteredCommandHistory(
+        commandHistory.filter((c) => c.startsWith(typedInput))
+      )
+    } else {
+      setFilteredCommandHistory(commandHistory)
+    }
+  }, [typedInput])
+
+  useEffect(() => {
     scrollToBottom()
+  }, [executedCommands])
+
+  useEffect(() => {
+    setFilteredCommandHistory(commandHistory)
   }, [commandHistory])
+
+  useEffect(() => {
+    setFilteredCommandHistoryIndex(filteredCommandHistory.length)
+  }, [filteredCommandHistory])
+
+  useEffect(() => {
+    if (commandInputRef.current) {
+      if (
+        filteredCommandHistoryIndex >= 0 &&
+        filteredCommandHistoryIndex < filteredCommandHistory.length
+      ) {
+        commandInputRef.current.value =
+          filteredCommandHistory[filteredCommandHistoryIndex]
+      } else {
+        commandInputRef.current.value = typedInput
+      }
+    }
+  }, [filteredCommandHistoryIndex])
 
   return (
     <Window
@@ -449,13 +511,13 @@ const Terminal: FC = () => {
         onKeyPress={handleWindowKeyPress}
         tabIndex={0}
       >
-        {commandHistory
+        {executedCommands
           .filter((command) => !command.isInvisible)
-          .map((command, index, filteredCommandHistory) => (
+          .map((command, index, filteredExecutedCommands) => (
             <div className="flex flex-col items-start" key={command.timestamp}>
               <div className="flex items-center gap-2">
                 {index !== 0 &&
-                filteredCommandHistory.at(index - 1)?.result.error ? (
+                filteredExecutedCommands.at(index - 1)?.result.error ? (
                   <TiArrowRightThick color="red" />
                 ) : (
                   <TiArrowRightThick color="green" />
@@ -471,7 +533,7 @@ const Terminal: FC = () => {
             </div>
           ))}
         <div className="flex items-center gap-2">
-          {commandHistory.at(-1)?.result.error ? (
+          {executedCommands.at(-1)?.result.error ? (
             <TiArrowRightThick color="red" />
           ) : (
             <TiArrowRightThick color="green" />
@@ -480,7 +542,8 @@ const Terminal: FC = () => {
           <div className="relative grow">
             <input
               className="w-full border-0 bg-transparent outline-0"
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
+              onChange={handleChange}
               ref={commandInputRef}
             ></input>
             {/* <i className="caret"></i> */}

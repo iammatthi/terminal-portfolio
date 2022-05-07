@@ -4,9 +4,10 @@ type CommandResult = {
   output: JSX.Element | string
   error?: boolean
   shouldBeInvisible?: boolean
+  notSavedInHistory?: boolean
 }
 
-type CommandHistory = {
+type ExecutedCommand = {
   input: string
   result: CommandResult
   path: string[]
@@ -39,4 +40,4 @@ type Command = {
 }
 
 export { GetoptsType }
-export type { CommandResult, CommandHistory, Option, Operand, Command }
+export type { CommandResult, ExecutedCommand, Option, Operand, Command }
