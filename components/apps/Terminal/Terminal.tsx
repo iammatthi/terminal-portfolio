@@ -24,6 +24,8 @@ import Window from '../../Window'
 import { WindowsContext } from '../../OperatingSystem'
 import Browser from '../Browser'
 import TextViewer from '../TextViewer'
+import { TableElement } from '../../../types/table'
+import Table from '../../Table'
 
 const Terminal: FC = () => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
@@ -42,6 +44,7 @@ const Terminal: FC = () => {
   const [executedCommands, setExecutedCommands] = useState<ExecutedCommand[]>(
     []
   )
+  const [hint, setHint] = useState<TableElement[]>([])
 
   const incrementFilteredCommandHistoryIndex = () => {
     if (filteredCommandHistoryIndex < filteredCommandHistory.length) {
@@ -241,19 +244,12 @@ const Terminal: FC = () => {
             </>
           )
         } else {
-          output = (
-            <div className="flex flex-wrap gap-4">
-              {filteredFiles.map((file) => (
-                <div key={file.name}>
-                  {file.type === FileType.Directory ? (
-                    <span className="text-sky-600">{file.name}</span>
-                  ) : (
-                    <span>{file.name}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )
+          const data: TableElement[] = filteredFiles.map((file) => ({
+            name: file.name,
+            className: file.type === FileType.Directory ? 'text-sky-600' : '',
+          }))
+
+          output = <Table data={data} />
         }
 
         return { output: output }
@@ -430,17 +426,86 @@ const Terminal: FC = () => {
     })
   }
 
+  const scrollToBottom = () => {
+    commandsEndRef.current?.scrollIntoView({ behavior: 'auto' })
+  }
+
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault()
       const input = event.currentTarget.value
       exec(input)
-      setTypedInput('')
       event.currentTarget.value = ''
+      setTypedInput('')
+      setHint([])
     } else if (event.key === 'ArrowUp') {
       decrementFilteredCommandHistoryIndex()
     } else if (event.key === 'ArrowDown') {
       incrementFilteredCommandHistoryIndex()
+    } else if (event.key === 'Tab') {
+      event.preventDefault()
+      const input = event.currentTarget.value
+
+      let filteredList: TableElement[]
+
+      const words = input.split(' ')
+      const lastWord = words[words.length - 1]
+      if (words.length === 1) {
+        // is a command
+        const list1 = commands.map((c) => ({
+          name: c.name,
+        }))
+
+        const list2 = Object.keys(aliases).map((a) => ({
+          name: a,
+        }))
+
+        filteredList = [...list1, ...list2].filter((el) =>
+          el.name.toLowerCase().startsWith(lastWord.toLowerCase())
+        )
+      } else {
+        // is a file list
+        filteredList = files
+          .filter((file) =>
+            file.name.toLowerCase().startsWith(lastWord.toLowerCase())
+          )
+          .map((file) => ({
+            name: file.name,
+            className: file.type === FileType.Directory ? 'text-sky-600' : '',
+          }))
+      }
+
+      if (filteredList.length === 0) {
+        setHint([])
+        return
+      }
+
+      let str = words.length > 1 ? words.slice(0, -1).join(' ') + ' ' : ''
+      if (filteredList.length === 1) {
+        setHint([])
+        str += filteredList[0].name + ' '
+      } else {
+        filteredList.sort((a, b) => a.name.localeCompare(b.name))
+        const indexStr1 = 0,
+          indexStr2 = filteredList.length - 1
+        const max = Math.min(
+          filteredList[indexStr1].name.length,
+          filteredList[indexStr2].name.length
+        )
+        for (let i = 0; i < max; i++) {
+          if (
+            filteredList[indexStr1].name[i] !== filteredList[indexStr2].name[i]
+          ) {
+            break
+          }
+
+          str += filteredList[indexStr1].name[i]
+        }
+        setHint(filteredList)
+      }
+
+      event.currentTarget.value = str
+      setTypedInput(str)
     }
   }
 
@@ -452,12 +517,8 @@ const Terminal: FC = () => {
     commandInputRef.current?.focus()
   }
 
-  const scrollToBottom = () => {
-    commandsEndRef.current?.scrollIntoView({ behavior: 'auto' })
-  }
-
   useEffect(() => {
-    exec('help')
+    // exec('help')
   }, [])
 
   useEffect(() => {
@@ -472,7 +533,7 @@ const Terminal: FC = () => {
 
   useEffect(() => {
     scrollToBottom()
-  }, [executedCommands])
+  }, [executedCommands, hint])
 
   useEffect(() => {
     setFilteredCommandHistory(commandHistory)
@@ -548,6 +609,9 @@ const Terminal: FC = () => {
             ></input>
             {/* <i className="caret"></i> */}
           </div>
+        </div>
+        <div className="flex w-full flex-col items-start justify-start text-left">
+          <Table data={hint} />
         </div>
         <div ref={commandsEndRef} />
       </div>
