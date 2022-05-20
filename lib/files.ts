@@ -1,15 +1,15 @@
 import { APIResponse } from '../types/api'
 
 const getFiles = (path: string[]): Promise<APIResponse> => {
-  return fetch('http://localhost:3000/api/files/' + path.join('/')).then(
-    (res) => res.json()
-  )
+  return fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/files/` + path.join('/')
+  ).then((res) => res.json())
 }
 
 const getFileContents = (path: string[]): Promise<APIResponse> => {
-  return fetch('http://localhost:3000/api/file/' + path.join('/')).then((res) =>
-    res.json()
-  )
+  return fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/file/` + path.join('/')
+  ).then((res) => res.json())
 }
 
 export { getFiles, getFileContents }

@@ -365,6 +365,58 @@ const Terminal: FC = () => {
         }
       },
     },
+    {
+      name: 'apt',
+      description: 'command-line interface',
+      operands: [
+        {
+          name: 'action',
+          description: 'possible actions: install',
+        },
+        {
+          name: 'command',
+          description: 'command to install',
+        },
+      ],
+      options: [],
+      handler: async (args) => {
+        if (args._.length === 0) {
+          return { output: 'apt: no action selected' }
+        }
+
+        const action = args._[0]
+        if (action === 'install') {
+          const commands = args._.slice(1)
+
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/api/contact/`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ message: commands.join(' ') }),
+            }
+          )
+          const data = await res.json()
+
+          if (res.status != 200) {
+            return {
+              output: `apt: ${data.data}`,
+              error: true,
+            }
+          }
+
+          return {
+            output: `installation of the following commands was requested from the author: ${commands.join(
+              ' '
+            )}`,
+          }
+        } else {
+          return { output: `apt: invalid operand ${action}` }
+        }
+      },
+    },
   ]
   // sort commands by name
   commands.sort((a, b) => a.name.localeCompare(b.name))
@@ -376,6 +428,7 @@ const Terminal: FC = () => {
     ll: 'ls -lh',
     lsa: 'ls -lah',
     open: 'xdg-open',
+    'apt-get': 'apt',
   }
 
   const getCommandResult = async (input: string): Promise<CommandResult> => {

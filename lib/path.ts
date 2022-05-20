@@ -14,7 +14,9 @@ const pathToString = (path: string[]) => {
 }
 
 const getAllPaths = (): Promise<APIResponse> => {
-  return fetch('http://localhost:3000/api/paths/').then((res) => res.json())
+  return fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/paths/`).then((res) =>
+    res.json()
+  )
 }
 
 export { getPathSymbol, pathToString, getAllPaths }
