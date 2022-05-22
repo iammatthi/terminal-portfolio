@@ -417,6 +417,64 @@ const Terminal: FC = () => {
         }
       },
     },
+    {
+      name: 'man',
+      description: 'an interface to the system reference manuals',
+      operands: [
+        {
+          name: 'page',
+          description: 'name of the program, utility of function',
+        },
+      ],
+      options: [],
+      handler: async (args) => {
+        if (args._.length === 0) {
+          return {
+            output: (
+              <>
+                <span>What manual page do you want?</span>
+                <span>For example, try 'man man'.</span>
+              </>
+            ),
+            error: true,
+          }
+        }
+        const page = args._[0]
+
+        const commandObj = getCommandFromString(page)
+
+        // FIXME: find alternative to &nbsp;
+        if (commandObj) {
+          return {
+            output: (
+              <>
+                <span>NAME</span>
+                <span>
+                  &nbsp;&nbsp;&nbsp;&nbsp;{commandObj.name} -{' '}
+                  {commandObj.description}
+                </span>
+                <span>SYNOPSIS</span>
+                <span>
+                  &nbsp;&nbsp;&nbsp;&nbsp;{commandObj.name}{' '}
+                  {commandObj.options.length > 0 && '[OPTION]...'}{' '}
+                  {commandObj.operands
+                    .map((operand) => `[${operand.name}]`)
+                    .join(' ')}
+                </span>
+                {commandObj.options.length > 0 && <span>OPTIONS</span>}
+                {commandObj.options.map((option) => (
+                  <span>
+                    &nbsp;&nbsp;&nbsp;&nbsp;-{option.name}&nbsp;&nbsp;
+                    {option.description}
+                  </span>
+                ))}
+              </>
+            ),
+          }
+        }
+        return { output: `No manual entry for ${page}` }
+      },
+    },
   ]
   // sort commands by name
   commands.sort((a, b) => a.name.localeCompare(b.name))
@@ -431,6 +489,11 @@ const Terminal: FC = () => {
     'apt-get': 'apt',
   }
 
+  const getCommandFromString = (command: string): Command | undefined => {
+    const commandObj = commands.find((c) => c.name === command)
+    return commandObj
+  }
+
   const getCommandResult = async (input: string): Promise<CommandResult> => {
     let command: ParseEntry, args: ParseEntry[]
 
@@ -443,7 +506,7 @@ const Terminal: FC = () => {
       else break
     }
 
-    const commandObj = commands.find((c) => c.name === command)
+    const commandObj = getCommandFromString(command.toString())
     if (commandObj) {
       const rules: getopts.Options = commandObj.options.reduce((prev, curr) => {
         if (curr.getoptsType in prev) prev[curr.getoptsType].push(curr.name)
