@@ -1,9 +1,9 @@
+// FIXME: sohuld be in the same file as the other path utils
+
 import fs from 'fs'
 import path from 'path'
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { APIResponse } from '../../../types/api'
 
-const getAllPaths = (startPath = '') => {
+const getAllPaths = (startPath = ''): string[] => {
   const dir = path.resolve('./public/_files/', startPath)
   const entries = fs.readdirSync(dir, { withFileTypes: true })
 
@@ -27,6 +27,4 @@ const getAllPaths = (startPath = '') => {
   return paths
 }
 
-export default (req: NextApiRequest, res: NextApiResponse<APIResponse>) => {
-  res.status(200).json({ data: getAllPaths() })
-}
+export { getAllPaths }

@@ -1,27 +1,43 @@
+import { useEffect, useState } from 'react'
 import type { NextPage } from 'next'
-import { GetStaticProps, GetStaticPaths, GetServerSideProps } from 'next'
-import { getAllPaths } from '../lib/path'
+import { GetStaticProps, GetStaticPaths } from 'next'
 import { getFileContents } from '../lib/files'
 import { ParsedUrlQuery } from 'querystring'
 import md from 'markdown-it'
 import matter from 'gray-matter'
 import { FileExtension } from '../types/file'
+import { getAllPaths } from '../lib/paths'
 
 interface Props {
-  content: string
-  frontmatter: { [key: string]: any }
+  path: string[]
 }
 
 interface Params extends ParsedUrlQuery {
   path: string[]
 }
 
-const Page: NextPage<Props> = ({ frontmatter, content }) => {
+const Page: NextPage<Props> = ({ path }) => {
+  const [data, setData] = useState<{ [key: string]: any }>()
+
+  useEffect(() => {
+    getFileContents(path).then((rawContent) => {
+      const { data: frontmatter, content } = matter(rawContent.data)
+      setData({
+        frontmatter,
+        content: content,
+      })
+    })
+  }, [path])
+
+  if (!data) {
+    return <div>Loading...</div>
+  }
+
   return (
     <div className="flex h-full w-full justify-center overflow-auto bg-white px-1 py-2 align-middle">
       <div className="prose">
-        <h1>{frontmatter.title}</h1>
-        <div dangerouslySetInnerHTML={{ __html: md().render(content) }} />
+        <h1>{data.frontmatter.title}</h1>
+        <div dangerouslySetInnerHTML={{ __html: md().render(data.content) }} />
       </div>
     </div>
   )
@@ -32,37 +48,16 @@ export const getStaticProps: GetStaticProps<Props, Params> = async (
 ) => {
   const { path } = context.params!
   path[path.length - 1] = path[path.length - 1] + '.' + FileExtension.Markdown
-  const rawContent = await getFileContents(path)
 
-  if (rawContent.error) {
-    return {
-      props: {
-        frontmatter: {},
-        content: '',
-      },
-    }
-  }
-
-  const { data: frontmatter, content } = matter(rawContent.data)
   return {
     props: {
-      frontmatter,
-      content: content,
+      path: path,
     },
   }
 }
 
 export const getStaticPaths: GetStaticPaths<Params> = async () => {
-  const allPaths = await getAllPaths()
-
-  if (allPaths.error) {
-    return {
-      paths: [],
-      fallback: false,
-    }
-  }
-
-  const paths = allPaths.data as string[]
+  const paths = getAllPaths()
 
   return {
     paths: paths
