@@ -22,7 +22,7 @@ const WindowsContext = createContext<{
 }) // FIXME: change type
 
 const OperatingSystem: FC = ({ children }) => {
-  let processCounter = 0
+  const [processCounter, setProcessCounter] = useState<number>(0)
 
   const [windows, setWindows] = useState<JSX.Element[]>([])
 
@@ -33,13 +33,15 @@ const OperatingSystem: FC = ({ children }) => {
   }
 
   const closeWindow = (process: number) => {
-    setWindows((prevWindows) => {
-      return prevWindows.filter((window) => window.props.process !== process)
-    })
+    setWindows((prevWindows) =>
+      prevWindows.filter((window) => window.props.process !== process)
+    )
   }
 
   const getProcess = () => {
-    return processCounter++
+    let value = processCounter
+    setProcessCounter(processCounter + 1)
+    return value
   }
 
   const value = useMemo(

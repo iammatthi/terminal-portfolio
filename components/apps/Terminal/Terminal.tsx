@@ -339,6 +339,7 @@ const Terminal: FC<Props> = ({ className, style, draggable }) => {
 
             openWindow(
               <Browser
+                draggable
                 className={cn(s.window)}
                 url={pathStr}
                 process={getProcess()}
@@ -373,6 +374,7 @@ const Terminal: FC<Props> = ({ className, style, draggable }) => {
 
             openWindow(
               <TextViewer
+                draggable
                 className={cn(s.window)}
                 content={fileContents.data}
                 process={getProcess()}
