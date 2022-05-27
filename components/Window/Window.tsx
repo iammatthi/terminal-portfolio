@@ -1,4 +1,3 @@
-import cn from 'classnames'
 import { FC, useRef } from 'react'
 import Draggable from 'react-draggable'
 import {
@@ -6,16 +5,15 @@ import {
   VscChromeMaximize,
   VscChromeMinimize,
 } from 'react-icons/vsc'
+import cn from 'classnames'
 import s from './Window.module.css'
 
 interface Props {
   title?: string
   children: React.ReactNode
   className?: string
-  width?: string
-  height?: string
-  draggable?: boolean
   style?: React.CSSProperties
+  draggable?: boolean
   onClose?: () => void
   onMaximize?: () => void
   onMinimize?: () => void
@@ -25,8 +23,6 @@ const Window: FC<Props> = ({
   title,
   children,
   className,
-  width,
-  height,
   draggable,
   onClose,
   onMaximize,
@@ -61,17 +57,12 @@ const Window: FC<Props> = ({
       bounds="parent"
       handle=".header"
     >
-      <div
-        className={cn(s.root, className)}
-        style={{ width: width, height: height, ...style }}
-        ref={nodeRef}
-      >
-        <div
-          className="header relative flex w-full cursor-default items-center justify-center rounded-t-lg bg-zinc-800 p-5"
-          style={{ height: '50px' }}
-        >
-          <span>{title}</span>
-          <div className="absolute right-0 flex flex-row gap-2 p-3">
+      <div className={cn(s.root, className)} style={{ ...style }} ref={nodeRef}>
+        <div className={cn(s.header, 'header')} style={{ height: '50px' }}>
+          <div className={cn(s.headerTitle)}>
+            <span className={cn(s.headerTitleText)}>{title}</span>
+          </div>
+          <div className={cn(s.headerButtons)}>
             <button className={cn(s.headerButton)} onClick={handleMinimize}>
               <VscChromeMinimize size={14} className="translate-y-1/4" />
             </button>

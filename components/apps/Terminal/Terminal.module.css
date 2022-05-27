@@ -1,1 +1,5 @@
-
+.window {
+  /* width: 735px;
+  height: 480px; */
+  @apply h-full w-full lg:h-[480px] lg:w-[735px];
+}

@@ -26,12 +26,20 @@ import Browser from '../Browser'
 import TextViewer from '../TextViewer'
 import { TableElement } from '../../../types/table'
 import Table from '../../Table'
+import cn from 'classnames'
+import s from './Terminal.module.css'
 
-const Terminal: FC = () => {
+interface Props {
+  className?: string
+  style?: React.CSSProperties
+  draggable?: boolean
+}
+
+const Terminal: FC<Props> = ({ className, style, draggable }) => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
   const commandInputRef = useRef<null | HTMLInputElement>(null)
 
-  const { windows, openWindow, getProc } = useContext(WindowsContext)
+  const { windows, openWindow, getProcess } = useContext(WindowsContext)
   const [path, setPath] = useState<string[]>([])
   const files = useFiles(path)
   const [commandHistory, setCommandHistory] = useState<string[]>([])
@@ -329,7 +337,13 @@ const Terminal: FC = () => {
               .join('/')
               .replace(new RegExp(`.${FileExtension.Markdown}$`), '')
 
-            openWindow(<Browser url={pathStr} proc={getProc()} />)
+            openWindow(
+              <Browser
+                className={cn(s.window)}
+                url={pathStr}
+                process={getProcess()}
+              />
+            )
 
             return { output: 'Opening Browser...' }
             break
@@ -358,7 +372,11 @@ const Terminal: FC = () => {
             }
 
             openWindow(
-              <TextViewer content={fileContents.data} proc={getProc()} />
+              <TextViewer
+                className={cn(s.window)}
+                content={fileContents.data}
+                process={getProcess()}
+              />
             )
             return { output: 'Opening TextViewer...' }
             break
@@ -567,7 +585,7 @@ const Terminal: FC = () => {
       const words = input.split(' ')
       const lastWord = words[words.length - 1]
       if (words.length === 1) {
-        // is a command
+        // Is a command
         const list1 = commands.map((c) => ({
           name: c.name,
         }))
@@ -580,11 +598,17 @@ const Terminal: FC = () => {
           el.name.toLowerCase().startsWith(lastWord.toLowerCase())
         )
       } else {
-        // is a file list
+        // Is a file list
         filteredList = files
-          .filter((file) =>
-            file.name.toLowerCase().startsWith(lastWord.toLowerCase())
-          )
+          .filter((file) => {
+            let lastWordLowerCase = lastWord.toLowerCase()
+            if (lastWordLowerCase === '') {
+              // Don't include hidden files if not explicitly asked for
+              return !file.name.toLowerCase().startsWith('.')
+            }
+
+            return file.name.toLowerCase().startsWith(lastWordLowerCase)
+          })
           .map((file) => ({
             name: file.name,
             className: file.type === FileType.Directory ? 'text-sky-600' : '',
@@ -678,10 +702,9 @@ const Terminal: FC = () => {
       title={
         'matthias@portfolio:~' + (path.length > 0 ? '/' + path.join('/') : '')
       }
-      width="735px"
-      height="480px"
-      draggable
-      style={{ fontFamily: 'Ubuntu Mono' }}
+      draggable={draggable}
+      style={{ fontFamily: 'Ubuntu Mono', ...style }}
+      className={cn(s.window, className)}
     >
       <div
         className="h-full w-full cursor-text overflow-auto bg-zinc-700 px-1 py-2"

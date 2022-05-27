@@ -1,23 +1,38 @@
 import { FC, useContext } from 'react'
 import { WindowsContext } from '../../OperatingSystem'
 import Window from '../../Window'
+import cn from 'classnames'
 
 interface Props {
-  proc: number
+  process: number
   content: string
+  className?: string
+  style?: React.CSSProperties
+  draggable?: boolean
 }
 
-const TextViewer: FC<Props> = ({ proc, content }) => {
-  const { closeWindow, getProc } = useContext(WindowsContext)
+const TextViewer: FC<Props> = ({
+  process,
+  content,
+  className,
+  style,
+  draggable,
+}) => {
+  const { closeWindow, getProcess } = useContext(WindowsContext)
 
   const handleClose = () => {
-    closeWindow(proc)
+    closeWindow(process)
   }
 
   return (
-    <Window width="735px" height="480px" draggable onClose={handleClose}>
-      <div className="h-full w-full bg-zinc-600">
-        <span className="whitespace-pre-wrap">{content}</span>
+    <Window
+      draggable={draggable}
+      onClose={handleClose}
+      style={{ ...style }}
+      className={cn(className)}
+    >
+      <div className="h-full w-full whitespace-pre-wrap bg-zinc-600 p-5 text-left">
+        {content}
       </div>
     </Window>
   )

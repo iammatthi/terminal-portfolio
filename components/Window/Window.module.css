@@ -2,6 +2,33 @@
   @apply absolute flex flex-col text-white;
 }
 
+.header {
+  /* @apply relative flex w-full cursor-default items-center justify-center rounded-t-lg bg-zinc-800 p-5; */
+  @apply grid w-full cursor-default justify-center gap-5 rounded-t-lg bg-zinc-800;
+
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.headerTitle {
+  @apply flex items-center;
+
+  min-width: 0; /* https://stackoverflow.com/questions/17779293/css-text-overflow-ellipsis-not-working#answer-53784508 */
+  grid-column-start: 2;
+}
+
+.headerTitleText {
+  display: inline-block;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  grid-column-start: 2;
+}
+
+.headerButtons {
+  @apply flex flex-row items-center justify-end gap-2 px-3;
+}
+
 .headerButton {
   @apply flex h-8 w-8 items-center justify-center rounded-full border border-zinc-800 transition-colors duration-300;
 }

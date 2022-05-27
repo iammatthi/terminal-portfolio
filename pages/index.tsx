@@ -9,7 +9,7 @@ const Home: NextPage = () => {
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-black text-center">
-      <Terminal />
+      <Terminal draggable />
       {windows.map((window) => (
         <>{window}</>
       ))}

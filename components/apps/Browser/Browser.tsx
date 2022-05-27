@@ -1,21 +1,30 @@
 import { FC, useContext } from 'react'
 import { WindowsContext } from '../../OperatingSystem'
 import Window from '../../Window'
+import cn from 'classnames'
 
 interface Props {
-  proc: number
+  process: number
   url: string
+  className?: string
+  style?: React.CSSProperties
+  draggable?: boolean
 }
 
-const Browser: FC<Props> = ({ proc, url }) => {
-  const { closeWindow, getProc } = useContext(WindowsContext)
+const Browser: FC<Props> = ({ process, url, className, style, draggable }) => {
+  const { closeWindow, getProcess } = useContext(WindowsContext)
 
   const handleClose = () => {
-    closeWindow(proc)
+    closeWindow(process)
   }
 
   return (
-    <Window width="735px" height="480px" draggable onClose={handleClose}>
+    <Window
+      draggable={draggable}
+      onClose={handleClose}
+      style={{ ...style }}
+      className={cn(className)}
+    >
       <div className="h-full w-full">
         <iframe className="h-full w-full" src={url}></iframe>
       </div>

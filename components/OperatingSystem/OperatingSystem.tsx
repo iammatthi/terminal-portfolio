@@ -10,19 +10,19 @@ import {
 const WindowsContext = createContext<{
   windows: JSX.Element[]
   openWindow: (window: JSX.Element) => void
-  closeWindow: (proc: number) => void
-  getProc: () => number
+  closeWindow: (process: number) => void
+  getProcess: () => number
 }>({
   windows: [],
   openWindow: () => {},
   closeWindow: () => {},
-  getProc: () => {
+  getProcess: () => {
     return -1
   },
 }) // FIXME: change type
 
 const OperatingSystem: FC = ({ children }) => {
-  let procCounter = 0
+  let processCounter = 0
 
   const [windows, setWindows] = useState<JSX.Element[]>([])
 
@@ -32,18 +32,18 @@ const OperatingSystem: FC = ({ children }) => {
     })
   }
 
-  const closeWindow = (proc: number) => {
+  const closeWindow = (process: number) => {
     setWindows((prevWindows) => {
-      return prevWindows.filter((window) => window.props.proc !== proc)
+      return prevWindows.filter((window) => window.props.process !== process)
     })
   }
 
-  const getProc = () => {
-    return procCounter++
+  const getProcess = () => {
+    return processCounter++
   }
 
   const value = useMemo(
-    () => ({ windows, openWindow, closeWindow, getProc }),
+    () => ({ windows, openWindow, closeWindow, getProcess }),
     [windows]
   )
 
