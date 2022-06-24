@@ -28,18 +28,30 @@ import { TableElement } from '../../../types/table'
 import Table from '../../Table'
 import cn from 'classnames'
 import s from './Terminal.module.css'
+import { App } from '../../../types/apps'
 
 interface Props {
+  processId: number
   className?: string
   style?: React.CSSProperties
   draggable?: boolean
+  defaultPosition: {
+    x: number
+    y: number
+  }
 }
 
-const Terminal: FC<Props> = ({ className, style, draggable }) => {
+const Terminal: FC<Props> = ({
+  processId,
+  className,
+  style,
+  draggable,
+  defaultPosition,
+}) => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
   const commandInputRef = useRef<null | HTMLInputElement>(null)
 
-  const { windows, openWindow, getProcess } = useContext(WindowsContext)
+  const { openWindow } = useContext(WindowsContext)
   const [path, setPath] = useState<string[]>([])
   const files = useFiles(path)
   const [commandHistory, setCommandHistory] = useState<string[]>([])
@@ -53,6 +65,13 @@ const Terminal: FC<Props> = ({ className, style, draggable }) => {
     []
   )
   const [hint, setHint] = useState<TableElement[]>([])
+  const [position, setPosition] = useState<{ x: number; y: number }>(
+    defaultPosition
+  )
+
+  const handlePositionChange = (position: { x: number; y: number }) => {
+    setPosition(position)
+  }
 
   const incrementFilteredCommandHistoryIndex = () => {
     if (filteredCommandHistoryIndex < filteredCommandHistory.length) {
@@ -337,15 +356,7 @@ const Terminal: FC<Props> = ({ className, style, draggable }) => {
               .join('/')
               .replace(new RegExp(`.${FileExtension.Markdown}$`), '')
 
-            openWindow(
-              <Browser
-                draggable
-                className={cn(s.window)}
-                url={pathStr}
-                process={getProcess()}
-              />
-            )
-
+            openWindow(App.Browser, { url: pathStr }, position)
             return { output: 'Opening Browser...' }
             break
 
@@ -372,14 +383,7 @@ const Terminal: FC<Props> = ({ className, style, draggable }) => {
               }
             }
 
-            openWindow(
-              <TextViewer
-                draggable
-                className={cn(s.window)}
-                content={fileContents.data}
-                process={getProcess()}
-              />
-            )
+            openWindow(App.TextViewer, { content: fileContents.data }, position)
             return { output: 'Opening TextViewer...' }
             break
         }
@@ -706,7 +710,11 @@ const Terminal: FC<Props> = ({ className, style, draggable }) => {
       }
       draggable={draggable}
       style={{ fontFamily: 'Ubuntu Mono', ...style }}
-      className={cn(s.window, className)}
+      className={cn(className)}
+      processId={processId}
+      onPositionChange={handlePositionChange}
+      position={position}
+      defaultPosition={defaultPosition}
     >
       <div
         className="h-full w-full cursor-text overflow-auto bg-zinc-700 px-1 py-2"

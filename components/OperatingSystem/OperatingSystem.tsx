@@ -1,52 +1,135 @@
-import {
-  createContext,
-  Dispatch,
-  FC,
-  SetStateAction,
-  useMemo,
-  useState,
-} from 'react'
+import { createContext, FC, useMemo, useState } from 'react'
+import { App } from '../../types/apps'
+import Browser from '../apps/Browser'
+import Terminal from '../apps/Terminal'
+import TextViewer from '../apps/TextViewer'
 
-const WindowsContext = createContext<{
-  windows: JSX.Element[]
-  openWindow: (window: JSX.Element) => void
-  closeWindow: (process: number) => void
-  getProcess: () => number
-}>({
-  windows: [],
+type Process = {
+  id: number
+  order: number
+  window: JSX.Element
+}
+
+type Props = {
+  processes: Process[]
+  openWindow: (app: App, data: any, position?: any) => void
+  closeWindow: (processId: number) => void
+  getNewProcessId: () => number
+  focus: (processId: number) => void
+  getOrder: (processId: number) => number
+}
+
+const WindowsContext = createContext<Props>({
+  processes: [],
   openWindow: () => {},
   closeWindow: () => {},
-  getProcess: () => {
+  getNewProcessId: () => {
     return -1
   },
-}) // FIXME: change type
+  focus: () => {},
+  getOrder: () => {
+    return -1
+  },
+})
 
 const OperatingSystem: FC = ({ children }) => {
   const [processCounter, setProcessCounter] = useState<number>(0)
 
-  const [windows, setWindows] = useState<JSX.Element[]>([])
+  const [processes, setProcesses] = useState<Process[]>([])
 
-  const openWindow = (window: JSX.Element) => {
-    setWindows((prevWindows) => {
-      return [...prevWindows, window]
-    })
+  const openWindow = (app: App, data: any, position?: any) => {
+    const procId = getNewProcessId()
+    const defaultPosition = position
+      ? { x: position.x + 30, y: position.y + 60 }
+      : { x: 0, y: 0 }
+
+    console.log(defaultPosition, position)
+
+    let window: JSX.Element
+    switch (app) {
+      case App.Browser:
+        window = (
+          <Browser
+            draggable
+            processId={procId}
+            data={data}
+            defaultPosition={defaultPosition}
+          />
+        )
+        break
+      case App.Terminal:
+        window = (
+          <Terminal
+            draggable
+            processId={procId}
+            defaultPosition={defaultPosition}
+          />
+        )
+        break
+      case App.TextViewer:
+        window = (
+          <TextViewer
+            draggable
+            processId={procId}
+            data={data}
+            defaultPosition={defaultPosition}
+          />
+        )
+        break
+      default:
+        return
+    }
+
+    setProcesses((prev) => [
+      ...prev,
+      {
+        id: window.props.processId,
+        order: processCounter,
+        window: window,
+      },
+    ])
   }
 
-  const closeWindow = (process: number) => {
-    setWindows((prevWindows) =>
-      prevWindows.filter((window) => window.props.process !== process)
+  const closeWindow = (processId: number) => {
+    setProcesses((prevProcesses) =>
+      prevProcesses.filter((process) => process.id !== processId)
     )
   }
 
-  const getProcess = () => {
-    let value = processCounter
-    setProcessCounter(processCounter + 1)
+  const getNewProcessId = () => {
+    const value = processCounter
+    setProcessCounter((prev) => prev + 1)
     return value
   }
 
+  const focus = (processId: number) => {
+    console.log('FOCUS', processId, processCounter)
+    setProcesses((prevProcesses) =>
+      prevProcesses.map((process) => {
+        if (process.id === processId) {
+          process.order = processCounter
+          setProcessCounter((prev) => prev + 1)
+        }
+        return process
+      })
+    )
+  }
+
+  const getOrder = (processId: number) => {
+    const process = processes.find((process) => process.id === processId)
+    return process ? process.order : 0
+  }
+
   const value = useMemo(
-    () => ({ windows, openWindow, closeWindow, getProcess }),
-    [windows]
+    () => ({
+      processes,
+      openWindow,
+      closeWindow,
+      getNewProcessId,
+      focus,
+      getOrder,
+    }),
+    [processes]
   )
 
   return (

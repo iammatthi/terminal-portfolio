@@ -1,5 +1,5 @@
 .root {
-  @apply absolute flex h-full w-full flex-col text-white lg:h-[480px] lg:w-[735px] lg-max:!transform-none;
+  @apply absolute flex h-full w-full  flex-col text-white lg:h-[480px] lg:w-[735px];
 }
 
 .header {
