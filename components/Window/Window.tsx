@@ -93,16 +93,18 @@ const Window: FC<Props> = ({
           <div className={cn(s.headerTitle)}>
             <span className={cn(s.headerTitleText)}>{title}</span>
           </div>
-          <div className={cn(s.headerButtons, 'not-drag')}>
-            <button className={cn(s.headerButton)} onClick={handleMinimize}>
-              <VscChromeMinimize size={14} className="translate-y-1/4" />
-            </button>
-            <button className={cn(s.headerButton)} onClick={handleMaximize}>
-              <VscChromeMaximize size={14} />
-            </button>
-            <button className={cn(s.headerButton)} onClick={handleClose}>
-              <VscChromeClose size={14} />
-            </button>
+          <div className={cn(s.headerButtonsContainer)}>
+            <div className={cn(s.headerButtons, 'not-drag')}>
+              <button className={cn(s.headerButton)} onClick={handleMinimize}>
+                <VscChromeMinimize size={14} className="translate-y-1/4" />
+              </button>
+              <button className={cn(s.headerButton)} onClick={handleMaximize}>
+                <VscChromeMaximize size={14} />
+              </button>
+              <button className={cn(s.headerButton)} onClick={handleClose}>
+                <VscChromeClose size={14} />
+              </button>
+            </div>
           </div>
         </div>
         <div className="w-full grow overflow-auto">{children}</div>

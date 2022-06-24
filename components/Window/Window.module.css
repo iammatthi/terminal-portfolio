@@ -25,8 +25,12 @@
   grid-column-start: 2;
 }
 
+.headerButtonsContainer {
+  @apply flex items-center justify-end;
+}
+
 .headerButtons {
-  @apply flex flex-row items-center justify-end gap-2 px-3;
+  @apply flex flex-row gap-2 pr-3;
 }
 
 .headerButton {
