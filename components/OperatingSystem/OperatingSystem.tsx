@@ -37,13 +37,13 @@ const OperatingSystem: FC = ({ children }) => {
 
   const [processes, setProcesses] = useState<Process[]>([])
 
-  const openWindow = (app: App, data: any, position?: any) => {
+  const openWindow = (app: App, data: any, callerPosition?: any) => {
     const procId = getNewProcessId()
-    const defaultPosition = position
-      ? { x: position.x + 30, y: position.y + 60 }
+    const defaultPosition = callerPosition
+      ? { x: callerPosition.x + 30, y: callerPosition.y + 60 }
       : { x: 0, y: 0 }
 
-    console.log(defaultPosition, position)
+    console.log(defaultPosition, callerPosition)
 
     let window: JSX.Element
     switch (app) {

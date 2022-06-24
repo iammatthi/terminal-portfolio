@@ -1,17 +1,13 @@
-import { FC, useContext, useRef, useState } from 'react'
-import Draggable, {
-  DraggableData,
-  DraggableEvent,
-  DraggableEventHandler,
-} from 'react-draggable'
+import cn from 'classnames'
+import { FC, MouseEvent, useContext, useRef } from 'react'
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'
 import {
   VscChromeClose,
   VscChromeMaximize,
   VscChromeMinimize,
 } from 'react-icons/vsc'
-import cn from 'classnames'
-import s from './Window.module.css'
 import { WindowsContext } from '../OperatingSystem'
+import s from './Window.module.css'
 
 export interface Props {
   title?: string
@@ -51,27 +47,24 @@ const Window: FC<Props> = ({
 }) => {
   const { getOrder, closeWindow, focus } = useContext(WindowsContext)
 
-  const handleStop: DraggableEventHandler = (
-    e: DraggableEvent,
-    data: DraggableData
-  ) => {
+  const handleStop = (e: DraggableEvent, data: DraggableData) => {
     if (onPositionChange) onPositionChange({ x: data.x, y: data.y })
   }
 
-  const handleClose = () => {
+  const handleClose = (event: MouseEvent<HTMLButtonElement>) => {
     closeWindow(processId)
     if (onClose) {
       onClose()
     }
   }
 
-  const handleMaximize = () => {
+  const handleMaximize = (event: MouseEvent<HTMLButtonElement>) => {
     if (onMaximize) {
       onMaximize()
     }
   }
 
-  const handleMinimize = () => {
+  const handleMinimize = (event: MouseEvent<HTMLButtonElement>) => {
     if (onMinimize) {
       onMinimize()
     }
@@ -84,7 +77,8 @@ const Window: FC<Props> = ({
       nodeRef={nodeRef}
       disabled={!draggable}
       bounds=".gui"
-      handle=".header"
+      handle=".drag"
+      cancel=".not-drag"
       onMouseDown={() => focus(processId)}
       onStop={handleStop}
       position={position}
@@ -95,11 +89,11 @@ const Window: FC<Props> = ({
         style={{ zIndex: getOrder(processId), ...style }}
         ref={nodeRef}
       >
-        <div className={cn(s.header, 'header')} style={{ height: '50px' }}>
+        <div className={cn(s.header, 'drag')} style={{ height: '50px' }}>
           <div className={cn(s.headerTitle)}>
             <span className={cn(s.headerTitleText)}>{title}</span>
           </div>
-          <div className={cn(s.headerButtons)}>
+          <div className={cn(s.headerButtons, 'not-drag')}>
             <button className={cn(s.headerButton)} onClick={handleMinimize}>
               <VscChromeMinimize size={14} className="translate-y-1/4" />
             </button>
