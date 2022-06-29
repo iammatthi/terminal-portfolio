@@ -1,9 +1,8 @@
-import { FC, useContext, useState } from 'react'
 import cn from 'classnames'
+import { FC, useContext, useState } from 'react'
 import Iframe from 'react-iframe-click'
-
-import Window from '../../Window'
 import { WindowsContext } from '../../OperatingSystem'
+import Window from '../../Window'
 
 interface Props {
   processId: number
@@ -27,11 +26,12 @@ const Browser: FC<Props> = ({
   data: { url },
   defaultPosition,
 }) => {
-  const { focus } = useContext(WindowsContext)
-
+  const [loaded, setLoaded] = useState<boolean>(false)
   const [position, setPosition] = useState<{ x: number; y: number }>(
     defaultPosition
   )
+
+  const { focus } = useContext(WindowsContext)
 
   const handlePositionChange = (position: { x: number; y: number }) => {
     setPosition(position)
@@ -51,13 +51,20 @@ const Browser: FC<Props> = ({
       position={position}
       defaultPosition={defaultPosition}
     >
-      <div className="h-full w-full">
+      <div className="relative h-full w-full">
+        <div
+          className={cn(
+            { hidden: loaded },
+            'absolute h-full w-full bg-white text-left text-black'
+          )}
+        ></div>
         <Iframe
           className="h-full w-full"
           src={url} // FIXME: Resolve type error
           onInferredClick={(e) => {
             onFocus()
           }}
+          onLoad={(e) => setLoaded(true)}
         ></Iframe>
       </div>
     </Window>
