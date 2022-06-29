@@ -180,6 +180,17 @@ const Terminal: FC<Props> = ({
       },
     },
     {
+      name: 'code',
+      description: 'Open vs code',
+      operands: [],
+      options: [],
+      handler: async (args) => {
+        window.open(process.env.NEXT_PUBLIC_GITHUB_VS_CODE_URL, '_blank')
+
+        return { output: '' }
+      },
+    },
+    {
       name: 'echo',
       description: 'display a line of text',
       operands: [
