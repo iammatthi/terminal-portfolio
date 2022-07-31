@@ -60,6 +60,7 @@ const Browser: FC<Props> = ({
         ></div>
         <Iframe
           className="h-full w-full"
+          // @ts-ignore
           src={url} // FIXME: Resolve type error
           onInferredClick={(e) => {
             onFocus()
