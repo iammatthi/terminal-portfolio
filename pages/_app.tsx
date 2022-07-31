@@ -8,11 +8,9 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head />
-      <OperatingSystem>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </OperatingSystem>
+      <Layout>
+        <Component {...pageProps} />
+      </Layout>
     </>
   )
 }

@@ -1,21 +1,30 @@
 import cn from 'classnames'
-import { FC, useRef } from 'react'
-import Draggable from 'react-draggable'
+import { FC, MouseEvent, useContext, useRef } from 'react'
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'
 import {
   VscChromeClose,
   VscChromeMaximize,
   VscChromeMinimize,
 } from 'react-icons/vsc'
+import { WindowsContext } from '../OperatingSystem'
 import s from './Window.module.css'
 
-interface Props {
+export interface Props {
   title?: string
   children: React.ReactNode
   className?: string
-  width?: string
-  height?: string
-  draggable?: boolean
   style?: React.CSSProperties
+  draggable?: boolean
+  processId: number
+  position?: {
+    x: number
+    y: number
+  }
+  defaultPosition?: {
+    x: number
+    y: number
+  }
+  onPositionChange?: (position: { x: number; y: number }) => void
   onClose?: () => void
   onMaximize?: () => void
   onMinimize?: () => void
@@ -25,28 +34,37 @@ const Window: FC<Props> = ({
   title,
   children,
   className,
-  width,
-  height,
   draggable,
+  processId,
+  position,
+  defaultPosition,
+  onPositionChange,
   onClose,
   onMaximize,
   onMinimize,
   style,
   ...rest
 }) => {
-  const handleClose = () => {
+  const { getOrder, closeWindow, focus } = useContext(WindowsContext)
+
+  const handleStop = (e: DraggableEvent, data: DraggableData) => {
+    if (onPositionChange) onPositionChange({ x: data.x, y: data.y })
+  }
+
+  const handleClose = (event: MouseEvent<HTMLButtonElement>) => {
+    closeWindow(processId)
     if (onClose) {
       onClose()
     }
   }
 
-  const handleMaximize = () => {
+  const handleMaximize = (event: MouseEvent<HTMLButtonElement>) => {
     if (onMaximize) {
       onMaximize()
     }
   }
 
-  const handleMinimize = () => {
+  const handleMinimize = (event: MouseEvent<HTMLButtonElement>) => {
     if (onMinimize) {
       onMinimize()
     }
@@ -58,29 +76,35 @@ const Window: FC<Props> = ({
     <Draggable
       nodeRef={nodeRef}
       disabled={!draggable}
-      bounds="parent"
-      handle=".header"
+      bounds=".gui"
+      handle=".drag"
+      cancel=".not-drag"
+      onMouseDown={() => focus(processId)}
+      onStop={handleStop}
+      position={position}
+      defaultPosition={defaultPosition}
     >
       <div
         className={cn(s.root, className)}
-        style={{ width: width, height: height, ...style }}
+        style={{ zIndex: getOrder(processId), ...style }}
         ref={nodeRef}
       >
-        <div
-          className="header relative flex w-full cursor-default items-center justify-center rounded-t-lg bg-zinc-800 p-5"
-          style={{ height: '50px' }}
-        >
-          <span>{title}</span>
-          <div className="absolute right-0 flex flex-row gap-2 p-3">
-            <button className={cn(s.headerButton)} onClick={handleMinimize}>
-              <VscChromeMinimize size={14} className="translate-y-1/4" />
-            </button>
-            <button className={cn(s.headerButton)} onClick={handleMaximize}>
-              <VscChromeMaximize size={14} />
-            </button>
-            <button className={cn(s.headerButton)} onClick={handleClose}>
-              <VscChromeClose size={14} />
-            </button>
+        <div className={cn(s.header, 'drag')} style={{ height: '50px' }}>
+          <div className={cn(s.headerTitle)}>
+            <span className={cn(s.headerTitleText)}>{title}</span>
+          </div>
+          <div className={cn(s.headerButtonsContainer)}>
+            <div className={cn(s.headerButtons, 'not-drag')}>
+              <button className={cn(s.headerButton)} onClick={handleMinimize}>
+                <VscChromeMinimize size={14} className="translate-y-1/4" />
+              </button>
+              <button className={cn(s.headerButton)} onClick={handleMaximize}>
+                <VscChromeMaximize size={14} />
+              </button>
+              <button className={cn(s.headerButton)} onClick={handleClose}>
+                <VscChromeClose size={14} />
+              </button>
+            </div>
           </div>
         </div>
         <div className="w-full grow overflow-auto">{children}</div>

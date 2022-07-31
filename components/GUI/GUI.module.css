@@ -1,5 +1,5 @@
 .root {
-  @apply absolute flex h-full w-full flex-col text-white lg:h-[480px] lg:w-[735px] lg-max:!transform-none;
+  @apply absolute flex h-full w-full  flex-col text-white lg:h-[480px] lg:w-[735px];
 }
 
 .header {
@@ -25,12 +25,8 @@
   grid-column-start: 2;
 }
 
-.headerButtonsContainer {
-  @apply flex items-center justify-end;
-}
-
 .headerButtons {
-  @apply flex flex-row gap-2 pr-3;
+  @apply flex flex-row items-center justify-end gap-2 px-3;
 }
 
 .headerButton {

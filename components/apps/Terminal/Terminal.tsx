@@ -26,12 +26,32 @@ import Browser from '../Browser'
 import TextViewer from '../TextViewer'
 import { TableElement } from '../../../types/table'
 import Table from '../../Table'
+import cn from 'classnames'
+import s from './Terminal.module.css'
+import { App } from '../../../types/apps'
 
-const Terminal: FC = () => {
+interface Props {
+  processId: number
+  className?: string
+  style?: React.CSSProperties
+  draggable?: boolean
+  defaultPosition: {
+    x: number
+    y: number
+  }
+}
+
+const Terminal: FC<Props> = ({
+  processId,
+  className,
+  style,
+  draggable,
+  defaultPosition,
+}) => {
   const commandsEndRef = useRef<null | HTMLDivElement>(null)
   const commandInputRef = useRef<null | HTMLInputElement>(null)
 
-  const { windows, openWindow, getProc } = useContext(WindowsContext)
+  const { openWindow } = useContext(WindowsContext)
   const [path, setPath] = useState<string[]>([])
   const files = useFiles(path)
   const [commandHistory, setCommandHistory] = useState<string[]>([])
@@ -45,6 +65,13 @@ const Terminal: FC = () => {
     []
   )
   const [hint, setHint] = useState<TableElement[]>([])
+  const [position, setPosition] = useState<{ x: number; y: number }>(
+    defaultPosition
+  )
+
+  const handlePositionChange = (position: { x: number; y: number }) => {
+    setPosition(position)
+  }
 
   const incrementFilteredCommandHistoryIndex = () => {
     if (filteredCommandHistoryIndex < filteredCommandHistory.length) {
@@ -150,6 +177,17 @@ const Terminal: FC = () => {
         tmp.forEach((item) => (item.isInvisible = true))
         setExecutedCommands(tmp)
         return { output: '', shouldBeInvisible: true }
+      },
+    },
+    {
+      name: 'code',
+      description: 'Open vs code',
+      operands: [],
+      options: [],
+      handler: async (args) => {
+        window.open(process.env.NEXT_PUBLIC_GITHUB_VS_CODE_URL, '_blank')
+
+        return { output: '' }
       },
     },
     {
@@ -329,8 +367,7 @@ const Terminal: FC = () => {
               .join('/')
               .replace(new RegExp(`.${FileExtension.Markdown}$`), '')
 
-            openWindow(<Browser url={pathStr} proc={getProc()} />)
-
+            openWindow(App.Browser, { url: pathStr }, position)
             return { output: 'Opening Browser...' }
             break
 
@@ -357,9 +394,7 @@ const Terminal: FC = () => {
               }
             }
 
-            openWindow(
-              <TextViewer content={fileContents.data} proc={getProc()} />
-            )
+            openWindow(App.TextViewer, { content: fileContents.data }, position)
             return { output: 'Opening TextViewer...' }
             break
         }
@@ -567,7 +602,7 @@ const Terminal: FC = () => {
       const words = input.split(' ')
       const lastWord = words[words.length - 1]
       if (words.length === 1) {
-        // is a command
+        // Is a command
         const list1 = commands.map((c) => ({
           name: c.name,
         }))
@@ -580,11 +615,17 @@ const Terminal: FC = () => {
           el.name.toLowerCase().startsWith(lastWord.toLowerCase())
         )
       } else {
-        // is a file list
+        // Is a file list
         filteredList = files
-          .filter((file) =>
-            file.name.toLowerCase().startsWith(lastWord.toLowerCase())
-          )
+          .filter((file) => {
+            let lastWordLowerCase = lastWord.toLowerCase()
+            if (lastWordLowerCase === '') {
+              // Don't include hidden files if not explicitly asked for
+              return !file.name.toLowerCase().startsWith('.')
+            }
+
+            return file.name.toLowerCase().startsWith(lastWordLowerCase)
+          })
           .map((file) => ({
             name: file.name,
             className: file.type === FileType.Directory ? 'text-sky-600' : '',
@@ -678,10 +719,13 @@ const Terminal: FC = () => {
       title={
         'matthias@portfolio:~' + (path.length > 0 ? '/' + path.join('/') : '')
       }
-      width="735px"
-      height="480px"
-      draggable
-      style={{ fontFamily: 'Ubuntu Mono' }}
+      draggable={draggable}
+      style={{ fontFamily: 'Ubuntu Mono', ...style }}
+      className={cn(className)}
+      processId={processId}
+      onPositionChange={handlePositionChange}
+      position={position}
+      defaultPosition={defaultPosition}
     >
       <div
         className="h-full w-full cursor-text overflow-auto bg-zinc-700 px-1 py-2"
