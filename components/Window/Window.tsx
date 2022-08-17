@@ -1,12 +1,12 @@
+import { WindowsContext } from '@components/OperatingSystem'
 import cn from 'classnames'
 import { FC, MouseEvent, useContext, useRef } from 'react'
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'
 import {
   VscChromeClose,
   VscChromeMaximize,
-  VscChromeMinimize,
+  VscChromeMinimize
 } from 'react-icons/vsc'
-import { WindowsContext } from '../OperatingSystem'
 import s from './Window.module.css'
 
 export interface Props {
@@ -45,7 +45,7 @@ const Window: FC<Props> = ({
   style,
   ...rest
 }) => {
-  const { getOrder, closeWindow, focus } = useContext(WindowsContext)
+  const { getOrder, closeWindow, focusWindow } = useContext(WindowsContext)
 
   const handleStop = (e: DraggableEvent, data: DraggableData) => {
     if (onPositionChange) onPositionChange({ x: data.x, y: data.y })
@@ -53,21 +53,19 @@ const Window: FC<Props> = ({
 
   const handleClose = (event: MouseEvent<HTMLButtonElement>) => {
     closeWindow(processId)
-    if (onClose) {
-      onClose()
-    }
+    if (onClose) onClose()
   }
 
   const handleMaximize = (event: MouseEvent<HTMLButtonElement>) => {
-    if (onMaximize) {
-      onMaximize()
-    }
+    if (onMaximize) onMaximize()
   }
 
   const handleMinimize = (event: MouseEvent<HTMLButtonElement>) => {
-    if (onMinimize) {
-      onMinimize()
-    }
+    if (onMinimize) onMinimize()
+  }
+
+  const handleMouseDown = (event: globalThis.MouseEvent) => {
+    focusWindow(processId)
   }
 
   const nodeRef = useRef(null)
@@ -79,14 +77,14 @@ const Window: FC<Props> = ({
       bounds=".gui"
       handle=".drag"
       cancel=".not-drag"
-      onMouseDown={() => focus(processId)}
+      onMouseDown={handleMouseDown}
       onStop={handleStop}
       position={position}
       defaultPosition={defaultPosition}
     >
       <div
         className={cn(s.root, className)}
-        style={{ zIndex: getOrder(processId), ...style }}
+        style={{ zIndex: getOrder(processId) + 10, ...style }}
         ref={nodeRef}
       >
         <div className={cn(s.header, 'drag')} style={{ height: '50px' }}>

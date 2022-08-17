@@ -1,6 +1,6 @@
-import { FC, useState } from 'react'
-import Window from '../../Window'
+import Window from '@components/Window'
 import cn from 'classnames'
+import { FC, useState } from 'react'
 
 interface Props {
   processId: number

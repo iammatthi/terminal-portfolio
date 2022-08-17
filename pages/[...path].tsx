@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react'
-import type { NextPage } from 'next'
-import { GetStaticProps, GetStaticPaths } from 'next'
-import { getFileContents } from '../lib/files'
-import { ParsedUrlQuery } from 'querystring'
-import md from 'markdown-it'
+import { FileExtension } from '@customtypes/file'
+import { getFileContents } from '@lib/files'
+import { getAllPaths } from '@lib/paths'
 import matter from 'gray-matter'
-import { FileExtension } from '../types/file'
-import { getAllPaths } from '../lib/paths'
+import md from 'markdown-it'
+import type { NextPage } from 'next'
+import { GetStaticPaths, GetStaticProps } from 'next'
+import { ParsedUrlQuery } from 'querystring'
+import { useEffect, useState } from 'react'
 
 interface Props {
   path: string[]

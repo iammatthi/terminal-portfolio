@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 
-import { OperatingSystem } from '../components/OperatingSystem'
-import GUI from '../components/GUI'
+import GUI from '@components/GUI'
+import { OperatingSystem } from '@components/OperatingSystem'
 
 const Home: NextPage = () => {
   return (

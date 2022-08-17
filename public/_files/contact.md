@@ -2,4 +2,4 @@
 title: 'Contact'
 ---
 
-[Click here to contact me](mailto:contact@matthiasberchtold.com)
+Click [here](mailto:contact@matthiasberchtold.com) to contact me by email.

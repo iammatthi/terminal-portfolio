@@ -1,8 +1,6 @@
-import { FC, useContext, useEffect, useRef } from 'react'
-import Draggable from 'react-draggable'
-import { App } from '../../types/apps'
-import Terminal from '../apps/Terminal'
-import { WindowsContext } from '../OperatingSystem'
+import { WindowsContext } from '@components/OperatingSystem'
+import { App } from '@customtypes/apps'
+import { FC, useContext, useEffect } from 'react'
 
 export interface Props {}
 

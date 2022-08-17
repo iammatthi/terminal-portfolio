@@ -1,9 +1,9 @@
+import { APIResponse } from '@customtypes/api'
+import { FileError, Node, NodeType } from '@customtypes/file'
+import { pathToString } from '@lib/path'
 import fs from 'fs'
-import path from 'path'
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { FileError, FileOrDirectory, FileType } from '../../../types/file'
-import { APIResponse } from '../../../types/api'
-import { pathToString } from '../../../lib/path'
+import path from 'path'
 
 export default (req: NextApiRequest, res: NextApiResponse<APIResponse>) => {
   const filePathStr = pathToString(req.query.path as string[])
@@ -22,23 +22,23 @@ export default (req: NextApiRequest, res: NextApiResponse<APIResponse>) => {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
 
   // Get files within the current directory
-  const files: FileOrDirectory[] = entries.map((file) => ({
+  const files: Node[] = entries.map((file) => ({
     name: file.name,
     type: file.isFile()
-      ? FileType.File
+      ? NodeType.File
       : file.isDirectory()
-      ? FileType.Directory
-      : FileType.Other,
+      ? NodeType.Directory
+      : NodeType.Other,
   }))
 
   files.push({
     name: '..',
-    type: FileType.Directory,
+    type: NodeType.Directory,
   })
 
   files.push({
     name: '.',
-    type: FileType.Directory,
+    type: NodeType.Directory,
   })
 
   // order files

@@ -1,4 +1,4 @@
-// FIXME: sohuld be in the same file as the other path utils
+// FIXME: should be in the same file as the other path utils
 
 import fs from 'fs'
 import path from 'path'

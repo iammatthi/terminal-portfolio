@@ -1,4 +1,4 @@
-import { APIResponse } from '../types/api'
+import { APIResponse } from '@customtypes/api'
 
 const getFiles = (path: string[]): Promise<APIResponse> => {
   return fetch(

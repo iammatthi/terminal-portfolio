@@ -1,9 +1,9 @@
+import { APIResponse } from '@customtypes/api'
+import { FileError } from '@customtypes/file'
+import { pathToString } from '@lib/path'
 import fs from 'fs'
-import path from 'path'
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { FileError, FileOrDirectory, FileType } from '../../../types/file'
-import { APIResponse } from '../../../types/api'
-import { pathToString } from '../../../lib/path'
+import path from 'path'
 
 export default (req: NextApiRequest, res: NextApiResponse<APIResponse>) => {
   const filePathStr = pathToString(req.query.path as string[])

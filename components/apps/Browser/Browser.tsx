@@ -1,8 +1,8 @@
+import { WindowsContext } from '@components/OperatingSystem'
+import Window from '@components/Window'
 import cn from 'classnames'
 import { FC, useContext, useState } from 'react'
 import Iframe from 'react-iframe-click'
-import { WindowsContext } from '../../OperatingSystem'
-import Window from '../../Window'
 
 interface Props {
   processId: number
@@ -31,14 +31,14 @@ const Browser: FC<Props> = ({
     defaultPosition
   )
 
-  const { focus } = useContext(WindowsContext)
+  const { focusWindow } = useContext(WindowsContext)
 
   const handlePositionChange = (position: { x: number; y: number }) => {
     setPosition(position)
   }
 
   const onFocus = () => {
-    focus(processId) // FIXME: How to do it better
+    focusWindow(processId) // FIXME: How to do it better
   }
 
   return (

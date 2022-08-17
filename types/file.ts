@@ -1,4 +1,4 @@
-const enum FileType {
+const enum NodeType {
   File,
   Directory,
   Other,
@@ -16,11 +16,11 @@ const enum FileError {
   NotAFile = 'not a file',
 }
 
-type FileOrDirectory = {
+type Node = {
   name: string
-  type: FileType
-  files?: FileOrDirectory[]
+  type: NodeType
+  files?: Node[]
 }
 
-export type { FileOrDirectory }
-export { FileType, FileError, FileExtension }
+export type { Node }
+export { NodeType, FileError, FileExtension }
