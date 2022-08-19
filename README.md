@@ -1,12 +1,14 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <h3 align="center">Terminal Portfolio</h3>
+  <h3 align="center">Terminal Portfolio 💻</h3>
 
   <p align="center">
     A portfolio website with the style of a terminal.
   </p>
 </div>
+
+![terminal-portfolio](https://user-images.githubusercontent.com/40419916/185617624-3bc79701-f130-4385-b1d2-850fbf416e28.png)
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -36,7 +38,7 @@
 
 ## About The Project
 
-INSERT TEXT
+Terminal Portfolio is a portfolio website with the style of a terminal. Feel free to use it for your own portfolio.
 
 ### Built With
 

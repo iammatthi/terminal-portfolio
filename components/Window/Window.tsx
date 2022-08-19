@@ -5,7 +5,7 @@ import Draggable, { DraggableData, DraggableEvent } from 'react-draggable'
 import {
   VscChromeClose,
   VscChromeMaximize,
-  VscChromeMinimize
+  VscChromeMinimize,
 } from 'react-icons/vsc'
 import s from './Window.module.css'
 

@@ -50,4 +50,3 @@ type Command = {
 
 export { OptionType, OperandType }
 export type { CommandResult, ExecutedCommand, Option, Operand, Command }
-
