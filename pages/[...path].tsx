@@ -2,7 +2,7 @@ import { FileExtension } from '@customtypes/file'
 import { getFileContents } from '@lib/files'
 import { getAllPaths } from '@lib/paths'
 import matter from 'gray-matter'
-import md from 'markdown-it'
+import MarkdownIt from 'markdown-it'
 import type { NextPage } from 'next'
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { ParsedUrlQuery } from 'querystring'
@@ -14,6 +14,23 @@ interface Props {
 
 interface Params extends ParsedUrlQuery {
   path: string[]
+}
+
+// Add target blank to all links
+// https://github.com/markdown-it/markdown-it/blob/master/docs/architecture.md
+const md = new MarkdownIt()
+var defaultRender =
+  md.renderer.rules.link_open ||
+  function (tokens, idx, options, env, self) {
+    return self.renderToken(tokens, idx, options)
+  }
+md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+  var aIndex = tokens[idx].attrIndex('target')
+  if (aIndex < 0)
+    tokens[idx].attrPush(['target', '_blank']) // add new attribute
+  else tokens[idx].attrs![aIndex][1] = '_blank' // replace value of existing attr
+  // pass token to default renderer.
+  return defaultRender(tokens, idx, options, env, self)
 }
 
 const Page: NextPage<Props> = ({ path }) => {
@@ -37,7 +54,7 @@ const Page: NextPage<Props> = ({ path }) => {
     <div className="flex h-full w-full justify-center overflow-auto bg-white px-1 py-2 align-middle">
       <div className="prose">
         <h1>{data.frontmatter.title}</h1>
-        <div dangerouslySetInnerHTML={{ __html: md().render(data.content) }} />
+        <div dangerouslySetInnerHTML={{ __html: md.render(data.content) }} />
       </div>
     </div>
   )
