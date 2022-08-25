@@ -1,13 +1,13 @@
 import { APIResponse } from '@customtypes/api'
 import { FileError, Node, NodeType } from '@customtypes/file'
 import { pathToString } from '@lib/path'
+import { getDir } from '@lib/paths'
 import fs from 'fs'
 import type { NextApiRequest, NextApiResponse } from 'next'
-import path from 'path'
 
 export default (req: NextApiRequest, res: NextApiResponse<APIResponse>) => {
   const filePathStr = pathToString(req.query.path as string[])
-  const dir = path.resolve('./public', filePathStr)
+  const dir = getDir(filePathStr)
 
   if (!fs.existsSync(dir)) {
     res.status(404).json({ error: true, data: FileError.NoSuchFileOrDirectory })

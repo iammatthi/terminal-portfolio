@@ -40,6 +40,8 @@
 
 Terminal Portfolio is a portfolio website with the style of a terminal. Feel free to use it for your own portfolio.
 
+⚠️ Mobile version is a bit buggy.
+
 ### Built With
 
 - [Next.js](https://nextjs.org/)

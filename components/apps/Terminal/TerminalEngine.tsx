@@ -244,12 +244,14 @@ export const TerminalEngine: FC<TerminalEngineProps> = ({
       operands: [],
       options: [],
       handler: async (args) => {
-        // Sort commands by name
-        const output = [
-          ...Object.entries(commands).map(
-            (command) => `  ${command[0].padEnd(10)} ${command[1].description}`
-          ),
-        ].join('\n\r')
+        // Sort commands by key
+        const output = Object.keys(commands)
+          .sort()
+          .map((command) => {
+            const commandObj = commands[command]
+            return `  ${command.padEnd(10)} ${commandObj.description}`
+          })
+          .join('\n\r')
         return { output: output }
       },
     },

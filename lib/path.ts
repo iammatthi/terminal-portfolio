@@ -4,11 +4,8 @@ const getPathSymbol = (path: string[]) => {
 }
 
 const pathToString = (path: string[]) => {
-  let filePath = ['_files']
-  if (path !== undefined) {
-    filePath = ['_files', ...path]
-  }
-  return filePath.join('/')
+  if (path === undefined) return ''
+  return path.join('/')
 }
 
 export { getPathSymbol, pathToString }

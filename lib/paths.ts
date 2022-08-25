@@ -3,8 +3,14 @@
 import fs from 'fs'
 import path from 'path'
 
+const getDir = (dirPath: string) => {
+  console.log('SIUM', dirPath)
+  // return path.resolve('public/', '_files/', dirPath)
+  return path.resolve(process.cwd(), '_files/', dirPath)
+}
+
 const getAllPaths = (startPath = ''): string[] => {
-  const dir = path.resolve('./public/_files/', startPath)
+  const dir = getDir(startPath)
   const entries = fs.readdirSync(dir, { withFileTypes: true })
 
   // Get files within the current directory
@@ -27,4 +33,4 @@ const getAllPaths = (startPath = ''): string[] => {
   return paths
 }
 
-export { getAllPaths }
+export { getAllPaths, getDir }
