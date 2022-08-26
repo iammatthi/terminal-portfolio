@@ -4,9 +4,7 @@ import fs from 'fs'
 import path from 'path'
 
 const getDir = (dirPath: string) => {
-  console.log('SIUM', dirPath)
-  // return path.resolve('public/', '_files/', dirPath)
-  return path.resolve(process.cwd(), '_files/', dirPath)
+  return path.resolve(process.cwd(), 'public/_files/', dirPath)
 }
 
 const getAllPaths = (startPath = ''): string[] => {
