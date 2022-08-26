@@ -5,6 +5,10 @@ import { getDir } from '@lib/paths'
 import fs from 'fs'
 import type { NextApiRequest, NextApiResponse } from 'next'
 
+export const config = {
+  unstable_includeFiles: 'contents',
+}
+
 export default (req: NextApiRequest, res: NextApiResponse<APIResponse>) => {
   const filePathStr = pathToString(req.query.path as string[])
   const dir = getDir(filePathStr)

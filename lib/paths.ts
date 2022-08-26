@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 
 const getDir = (dirPath: string) => {
-  return path.resolve(process.cwd(), 'public/_files/', dirPath)
+  return path.resolve(process.cwd(), 'contents/', dirPath)
 }
 
 const getAllPaths = (startPath = ''): string[] => {

@@ -70,7 +70,7 @@ To get a local copy up and running follow these simple example steps.
    1. Create and edit `.env` file (see [`.env.example`](.env.example) for an example)
    2. Edit SEO information ([`config/seo.json`](config/seo.json))
    3. Edit favicon ([`public/favicon.ico`](public/favicon.ico))
-   4. Edit files ([`public/_files`](public/_files))
+   4. Edit files ([`public/contents`](public/contents))
 
 ### Get notified when users request a new command
 
