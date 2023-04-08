@@ -14,7 +14,7 @@ import c from 'ansi-colors'
 import ansiEscapes from 'ansi-escapes'
 import getopts from 'getopts'
 import { FC, useEffect, useRef, useState } from 'react'
-import { parse as cmdParse, ParseEntry } from 'shell-quote'
+import { ParseEntry, parse as cmdParse } from 'shell-quote'
 import { ITerminalOptions } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import 'xterm/css/xterm.css'
@@ -220,7 +220,10 @@ export const TerminalEngine: FC<TerminalEngineProps> = ({
       operands: [],
       options: [],
       handler: async (args) => {
-        window.open(process.env.NEXT_PUBLIC_GITHUB_VS_CODE_URL, '_blank')
+        window.open(
+          `https://github.dev/${process.env.NEXT_PUBLIC_GITHUB}`,
+          '_blank'
+        )
 
         return { output: '' }
       },
