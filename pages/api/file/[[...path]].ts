@@ -7,8 +7,7 @@ import path from 'path'
 
 export default (req: NextApiRequest, res: NextApiResponse<APIResponse>) => {
   const filePathStr = pathToString(req.query.path as string[])
-
-  const file = path.resolve('./public', filePathStr)
+  const file = path.join(process.cwd(), 'contents/', filePathStr)
 
   if (!fs.existsSync(file)) {
     res.status(404).json({ error: true, data: FileError.NoSuchFileOrDirectory })
